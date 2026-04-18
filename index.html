@@ -1,0 +1,3109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escudo do Mestre - FORJA RPG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-darkest: #0d1117;
+            --bg-dark: #111827;
+            --bg-mid: #1f2937;
+            --bg-light: #374151;
+            --border: #374151;
+            --border-light: #4b5563;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-dark: #2563eb;
+            --accent-glow: rgba(59,130,246,0.3);
+            --danger: #dc2626;
+            --danger-dark: #b91c1c;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --enemy: #ef4444;
+            --ally: #10b981;
+            --sidebar-w: 280px;
+        }
+        html, body { height:100%; margin:0; padding:0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        * { box-sizing: border-box; }
+        .title-font { font-family: 'Orbitron', sans-serif; }
+
+        /* === INPUTS === */
+        .input-base, .textarea-base, .select-base {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            font-size: 0.875rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .input-base:focus, .textarea-base:focus, .select-base:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        /* === BUTTONS === */
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+        .btn:hover { background-color: var(--accent-dark); box-shadow: 0 2px 8px var(--accent-glow); }
+        .btn:active { transform: scale(0.97); }
+        .btn.active-tool {
+            background-color: var(--accent-dark);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
+        }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: var(--danger-dark); box-shadow: 0 2px 8px rgba(220,38,38,0.4); }
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #059669; }
+        .btn-ghost {
+            background-color: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+        .btn-ghost:hover { background-color: var(--bg-light); box-shadow: none; }
+        .btn-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            justify-content: center;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            flex-shrink: 0;
+        }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            width: var(--sidebar-w);
+            background-color: var(--bg-mid);
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+            z-index: 100;
+            transform: translateX(0);
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+        .sidebar-header {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            background: var(--bg-darkest);
+        }
+        .sidebar-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-light) transparent;
+        }
+        .sidebar-body::-webkit-scrollbar { width: 4px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+        /* === RIGHT PANEL === */
+        #npcDetailPanel {
+            position: fixed;
+            top: 0; right: 0;
+            height: 100vh;
+            width: var(--sidebar-w);
+            background-color: var(--bg-mid);
+            border-left: 1px solid var(--border);
+            overflow: hidden;
+            z-index: 100;
+            transform: translateX(0);
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        #npcDetailPanel.collapsed { transform: translateX(var(--sidebar-w)); }
+        .panel-header {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            background: var(--bg-darkest);
+        }
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-light) transparent;
+        }
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+        /* === CANVAS AREA === */
+        .central-content {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #canvasContainer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            background-color: #0a0f18;
+            display: block;
+            cursor: default;
+        }
+        #gameCanvas.cur-grab { cursor: grab; }
+        #gameCanvas.cur-grabbing { cursor: grabbing; }
+        #gameCanvas.cur-crosshair { cursor: crosshair; }
+
+        /* === TOGGLE SIDEBAR BUTTONS === */
+        .toggle-sidebar-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--bg-mid);
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            width: 1.5rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background-color 0.15s, left 0.25s cubic-bezier(0.4,0,0.2,1), right 0.25s cubic-bezier(0.4,0,0.2,1);
+            z-index: 101;
+            border: 1px solid var(--border-light);
+        }
+        #toggleNpcListBtn {
+            left: var(--sidebar-w);
+            border-radius: 0 0.5rem 0.5rem 0;
+            border-left: none;
+        }
+        #toggleNpcDetailBtn {
+            right: var(--sidebar-w);
+            border-radius: 0.5rem 0 0 0.5rem;
+            border-right: none;
+        }
+        .toggle-sidebar-btn:hover { background-color: var(--accent); color: white; border-color: var(--accent); }
+
+        /* === MAP CONTROLS OVERLAY === */
+        .map-controls-overlay {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            background-color: rgba(13,17,23,0.92);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 0.8rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            z-index: 10;
+            align-items: center;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+        .controls-divider {
+            width: 1px;
+            height: 1.75rem;
+            background: var(--border-light);
+            margin: 0 0.2rem;
+        }
+
+        /* === HEADER BUTTONS === */
+        .header-action-buttons {
+            position: fixed;
+            top: 0.75rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            z-index: 100;
+        }
+
+        /* === MAP TITLE OVERLAY === */
+        .map-info-overlay {
+            position: fixed;
+            top: 0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            background-color: rgba(13,17,23,0.85);
+            backdrop-filter: blur(8px);
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .map-info-overlay.collapsed {
+            transform: translateX(-50%) translateY(-120%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* === FEEDBACK === */
+        .feedback-message {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            z-index: 2000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-10px); opacity:0; }
+            to { transform: translateX(-50%) translateY(0); opacity:1; }
+        }
+        .feedback-success { background-color: rgba(16,185,129,0.95); color: white; }
+        .feedback-error { background-color: rgba(220,38,38,0.95); color: white; }
+        .feedback-info { background-color: rgba(59,130,246,0.95); color: white; }
+
+        /* === MODAL === */
+        .custom-modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background-color: rgba(0,0,0,0.75);
+            display: flex; align-items:center; justify-content:center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .custom-modal-content {
+            background-color: var(--bg-mid);
+            padding: 1.75rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 480px;
+            width: 90%;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .custom-modal-buttons { display:flex; justify-content:center; gap:0.75rem; margin-top:1.5rem; }
+
+        /* === MAIN SCREEN === */
+        #mainScreen {
+            display: flex; flex-direction:column; align-items:center; justify-content:center;
+            height:100%; width:100%;
+            background: radial-gradient(ellipse at center, #1a2744 0%, #0d1117 70%);
+            text-align:center; z-index:200;
+        }
+        #mainScreen.hidden { display:none; }
+        .main-card {
+            background-color: rgba(31,41,55,0.9);
+            padding: 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(59,130,246,0.1);
+            display: flex; flex-direction:column; gap:1.25rem; align-items:center;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+        }
+        .main-card h1 { font-size:3rem; font-weight:900; color:white; margin-bottom:0.5rem; text-shadow: 0 0 40px rgba(59,130,246,0.4); }
+        .main-card p { font-size:1.1rem; color:var(--text-muted); margin-bottom:1rem; }
+        .main-card .btn { width:260px; padding:0.875rem 2rem; font-size:1rem; border-radius:0.75rem; justify-content:center; }
+
+        /* === MAP APP === */
+        #mapApplication { width:100%; height:100%; display:flex; flex-direction:row; overflow:hidden; }
+        #mapApplication.hidden { display:none; }
+
+        /* === NPC LIST ITEMS === */
+        .npc-list-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.4rem;
+            background-color: var(--bg-light);
+            border: 1px solid transparent;
+            transition: border-color 0.15s, background-color 0.15s;
+        }
+        .npc-list-item:hover { border-color: var(--border-light); }
+        .npc-list-item.selected { border-color: var(--accent); background-color: rgba(59,130,246,0.1); }
+        .npc-name-btn {
+            flex: 1;
+            text-align: left;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0;
+        }
+        .npc-tag {
+            font-size: 0.625rem;
+            font-weight: 700;
+            padding: 0.125rem 0.375rem;
+            border-radius: 9999px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .npc-tag.enemy { background-color: rgba(239,68,68,0.2); color: var(--enemy); border: 1px solid rgba(239,68,68,0.4); }
+        .npc-tag.ally { background-color: rgba(16,185,129,0.2); color: var(--ally); border: 1px solid rgba(16,185,129,0.4); }
+
+        /* === INITIATIVE ITEM === */
+        .initiative-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.8125rem;
+            border: 1px solid transparent;
+        }
+        .initiative-item.active {
+            background-color: rgba(59,130,246,0.2);
+            border-color: var(--accent);
+        }
+        .initiative-order {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        /* === COORD DISPLAY === */
+        #coordDisplay {
+            position: absolute;
+            bottom: 5.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.375rem;
+            pointer-events: none;
+            font-family: monospace;
+            display: none;
+        }
+
+        /* === ZOOM DISPLAY === */
+        #zoomDisplay {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            min-width: 3rem;
+            text-align: center;
+        }
+
+        /* === FIELD LABELS === */
+        .field-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.375rem;
+        }
+        .field-group { margin-bottom: 0.875rem; }
+        .section-divider { border: none; border-top: 1px solid var(--border); margin: 0.75rem 0; }
+
+        /* === TOOLTIPS === */
+        [data-tip] { position: relative; }
+        [data-tip]::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 999;
+        }
+        [data-tip]:hover::after { opacity: 1; }
+
+        /* Token controls bar */
+        #tokenMapControls {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13,17,23,0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--accent);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            z-index: 20;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        #tokenMapControls.hidden { display: none; }
+
+        /* === LOBBY SCREEN === */
+        #lobbyScreen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #1a2744 0%, #0d1117 70%);
+            text-align: center;
+            z-index: 300;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+        #lobbyScreen.hidden { display: none; }
+
+        /* SDP code text areas — monospace, scrollable, compact */
+        .code-textarea {
+            width: 100%;
+            background: var(--bg-darkest);
+            border: 1px solid var(--border-light);
+            border-radius: 0.5rem;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 0.7rem;
+            padding: 0.5rem;
+            resize: none;
+            word-break: break-all;
+            display: block;
+        }
+        .code-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+        /* Hide lobby step divs by default */
+        .lobby-step { display: block; }
+        .lobby-step.hidden { display: none; }
+        /* Answer-waiting spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 1rem; height: 1rem;
+            border: 2px solid var(--border-light);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.4rem;
+        }
+
+        .lobby-card {
+            background-color: rgba(31, 41, 55, 0.92);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(59,130,246,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            align-items: stretch;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            width: 100%;
+            max-width: 480px;
+        }
+        .lobby-card h2 {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 0 40px rgba(59,130,246,0.4);
+        }
+        .lobby-card .lobby-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+        .lobby-section {
+            background: rgba(13,17,23,0.5);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .lobby-section h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.875rem;
+        }
+        .lobby-section .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 0.75rem;
+            font-size: 0.9375rem;
+        }
+        .lobby-or-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+        }
+        .lobby-or-divider::before,
+        .lobby-or-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Status badge inside lobby */
+        #lobbyStatus {
+            margin-top: 1rem;
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+        #lobbyStatus.status-waiting {
+            background: rgba(245,158,11,0.15);
+            border: 1px solid rgba(245,158,11,0.4);
+            color: var(--warning);
+            display: block;
+        }
+        #lobbyStatus.status-connected {
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.4);
+            color: var(--success);
+            display: block;
+        }
+        #lobbyStatus.status-error {
+            background: rgba(220,38,38,0.15);
+            border: 1px solid rgba(220,38,38,0.4);
+            color: var(--danger);
+            display: block;
+        }
+
+        /* Session ID display box */
+        .session-id-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-darkest);
+            border: 1px solid var(--border-light);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .session-id-box span {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9375rem;
+            color: var(--accent);
+            word-break: break-all;
+            text-align: left;
+        }
+        .session-id-box button {
+            flex-shrink: 0;
+        }
+
+        /* Peer counter badge */
+        #peerCounterBadge {
+            position: fixed;
+            top: 0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13,17,23,0.9);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            padding: 0.25rem 0.875rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            z-index: 150;
+            display: none;
+            gap: 0.4rem;
+            align-items: center;
+            backdrop-filter: blur(8px);
+        }
+        #peerCounterBadge.visible {
+            display: flex;
+        }
+        #peerCounterBadge .peer-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulseDot 2s infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== MAIN SCREEN ===== -->
+<div id="mainScreen">
+    <div class="main-card">
+        <div>
+            <h1 class="title-font">⚔️ Escudo do Mestre</h1>
+            <p>Gerencie seus NPCs e batalhas de RPG de forma intuitiva.</p>
+        </div>
+        <button id="createNewMapBtn" class="btn">🗺️ Criar Novo Mapa</button>
+        <input type="file" id="mainLoadMapInput" accept=".json" class="hidden">
+        <button id="loadExistingMapBtn" class="btn btn-ghost">📂 Carregar Mapa Existente</button>
+        <button id="multiplayerBtn" class="btn" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);width:260px;padding:0.875rem 2rem;font-size:1rem;border-radius:0.75rem;justify-content:center;">🌐 Sessão Multijogador</button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">Botão direito = mover mapa &nbsp;•&nbsp; Scroll = zoom</p>
+    </div>
+</div>
+
+<!-- ===== LOBBY SCREEN ===== -->
+<div id="lobbyScreen" class="hidden">
+    <div class="lobby-card">
+        <h2 class="title-font">🌐 Sessão Multijogador</h2>
+        <p class="lobby-subtitle">Conexão direta — funciona em qualquer rede, sem servidor</p>
+
+        <!-- ── HOST SECTION ─────────────────────────────────── -->
+        <div class="lobby-section">
+            <h3>🎲 Criar sessão (Mestre)</h3>
+
+            <!-- Step H1: initial button -->
+            <div id="hostStep1" class="lobby-step">
+                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.875rem;">
+                    Gera um código único para compartilhar com o jogador.
+                </p>
+                <button id="lobbyHostBtn" class="btn" style="width:100%;justify-content:center;">
+                    Criar Sessão como Mestre
+                </button>
+            </div>
+
+            <!-- Step H2: show offer code + paste answer (hidden initially) -->
+            <div id="hostStep2" class="lobby-step hidden">
+                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
+                    <strong style="color:var(--text-primary);">Passo 1 —</strong>
+                    Copie e envie ao jogador (WhatsApp, Telegram, etc):
+                </p>
+                <textarea id="hostOfferDisplay" class="code-textarea" rows="4" readonly></textarea>
+                <button id="copyOfferBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.4rem;">
+                    📋 Copiar código
+                </button>
+
+                <div style="margin:0.875rem 0;border-top:1px solid var(--border);"></div>
+
+                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
+                    <strong style="color:var(--text-primary);">Passo 2 —</strong>
+                    Cole aqui a resposta que o jogador enviar de volta:
+                </p>
+                <textarea id="hostAnswerInput" class="code-textarea" rows="4"
+                    placeholder="Cole aqui o código de resposta do jogador…"></textarea>
+                <button id="applyAnswerBtn" class="btn btn-success" style="width:100%;justify-content:center;margin-top:0.4rem;">
+                    ✓ Conectar
+                </button>
+
+                <div style="margin:0.875rem 0;border-top:1px solid var(--border);"></div>
+
+                <button id="lobbyHostEnterBtn" class="btn" style="width:100%;justify-content:center;">
+                    ▶ Entrar no Mapa (sem esperar)
+                </button>
+            </div>
+        </div>
+
+        <div class="lobby-or-divider">ou</div>
+
+        <!-- ── CLIENT SECTION ──────────────────────────────── -->
+        <div class="lobby-section">
+            <h3>🧑‍🤝‍🧑 Entrar numa sessão (Jogador)</h3>
+
+            <!-- Step C1: paste offer -->
+            <div id="clientStep1" class="lobby-step">
+                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
+                    Cole aqui o código que o Mestre enviou:
+                </p>
+                <textarea id="clientOfferInput" class="code-textarea" rows="4"
+                    placeholder="Cole o código do Mestre aqui…"></textarea>
+                <button id="lobbyJoinBtn" class="btn" style="width:100%;justify-content:center;margin-top:0.5rem;">
+                    Gerar Resposta
+                </button>
+            </div>
+
+            <!-- Step C2: show answer code (hidden initially) -->
+            <div id="clientStep2" class="lobby-step hidden">
+                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
+                    <strong style="color:var(--text-primary);">Envie este código ao Mestre:</strong>
+                </p>
+                <textarea id="clientAnswerDisplay" class="code-textarea" rows="4" readonly></textarea>
+                <button id="copyAnswerBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.4rem;">
+                    📋 Copiar resposta
+                </button>
+                <p id="clientWaitMsg" style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.75rem;">
+                    <span class="spinner"></span> Aguardando o Mestre finalizar a conexão…
+                </p>
+            </div>
+        </div>
+
+        <!-- Status display -->
+        <div id="lobbyStatus"></div>
+
+        <!-- Back button -->
+        <button id="lobbyBackBtn" class="btn btn-ghost" style="margin-top:0.75rem;width:100%;justify-content:center;">
+            ← Voltar ao Menu Principal
+        </button>
+    </div>
+</div>
+
+<!-- Peer counter badge (shown while in-game) -->
+<div id="peerCounterBadge">
+    <span class="peer-dot"></span>
+    <span id="peerCounterText">1 jogador</span>
+    <span style="color:var(--border-light);">|</span>
+    <span id="peerRoleText" style="color:var(--accent);">Mestre</span>
+</div>
+
+<!-- ===== MAP APPLICATION ===== -->
+<div id="mapApplication" class="hidden">
+
+    <!-- LEFT SIDEBAR -->
+    <aside id="npcSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="backToMainBtn" class="btn btn-ghost btn-sm">← Voltar</button>
+            <span class="title-font text-sm font-bold text-white ml-auto">NPCs</span>
+        </div>
+        <div class="sidebar-body">
+            <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;">+ Novo NPC</button>
+            <div id="npcList"></div>
+        </div>
+
+        <!-- Initiative Tracker -->
+        <div style="border-top:1px solid var(--border);padding:0.75rem;flex-shrink:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">⚡ Iniciativa</span>
+                <button id="addInitiativeBtn" class="btn btn-sm" style="padding:0.2rem 0.5rem;">+</button>
+            </div>
+            <div id="initiativeList" style="max-height:180px;overflow-y:auto;"></div>
+            <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+                <button id="nextTurnBtn" class="btn btn-sm" style="flex:1;justify-content:center;">▶ Próximo</button>
+                <button id="clearInitiativeBtn" class="btn btn-ghost btn-sm btn-icon" data-tip="Limpar">🗑</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- TOGGLE LEFT -->
+    <button id="toggleNpcListBtn" class="toggle-sidebar-btn">◀</button>
+
+    <!-- CENTRAL CANVAS -->
+    <main class="central-content">
+
+        <!-- Map title overlay -->
+        <div id="mapTitleOverlay" class="map-info-overlay">
+            <button id="toggleMapTitleBtn" class="btn btn-icon" style="font-size:0.75rem;width:1.75rem;height:1.75rem;" data-tip="Minimizar">▲</button>
+            <div>
+                <h1 class="title-font" style="font-size:1.4rem;font-weight:900;color:white;line-height:1.1;">⚔️ Escudo do Mestre</h1>
+                <p id="mapNameDisplay" style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.1rem;"></p>
+            </div>
+        </div>
+
+        <!-- Header action buttons -->
+        <div class="header-action-buttons">
+            <button id="mapSettingsBtn" class="btn btn-sm">⚙️ Config</button>
+            <button id="saveMapFileBtn" class="btn btn-sm">💾 Salvar</button>
+            <input type="file" id="loadMapInput" accept=".json" class="hidden">
+            <button id="loadMapFileBtn" class="btn btn-ghost btn-sm">📂 Carregar</button>
+        </div>
+
+        <div id="canvasContainer">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Coordinate display -->
+            <div id="coordDisplay"></div>
+
+            <!-- Token Controls -->
+            <div id="tokenMapControls" class="hidden">
+                <span id="selectedTokenLabel" style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);"></span>
+                <div class="controls-divider" style="height:1.25rem;"></div>
+                <button id="editTokenHpBtn" class="btn btn-sm" data-tip="Editar HP">❤️ HP</button>
+                <button id="clearSelectionBtn" class="btn btn-ghost btn-sm">✕ Desselecionar</button>
+                <button id="deleteSelectedTokenBtn" class="btn btn-danger btn-sm">🗑 Remover</button>
+            </div>
+
+            <!-- Map Controls Overlay -->
+            <div class="map-controls-overlay">
+                <!-- Zoom -->
+                <button id="zoomInBtn" class="btn btn-icon" data-tip="Zoom In (+)">+</button>
+                <span id="zoomDisplay">100%</span>
+                <button id="zoomOutBtn" class="btn btn-icon" data-tip="Zoom Out (-)">−</button>
+                <button id="resetViewBtn" class="btn btn-ghost btn-icon" data-tip="Resetar Vista">⌖</button>
+
+                <div class="controls-divider"></div>
+
+                <!-- Tools -->
+                <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover (M)">✥</button>
+                <button id="rulerBtn" class="btn btn-icon" data-tip="Régua (R)">📏</button>
+                <button id="drawLineBtn" class="btn btn-icon" data-tip="Desenhar (D)">✏️</button>
+                <button id="eraserBtn" class="btn btn-icon" data-tip="Borracha (E)">🧹</button>
+                <input type="color" id="drawColorInput" value="#ef4444"
+                    style="width:1.75rem;height:1.75rem;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;padding:0;background:none;flex-shrink:0;"
+                    data-tip="Cor do Desenho">
+
+                <div class="controls-divider"></div>
+
+                <!-- History -->
+                <button id="undoBtn" class="btn btn-ghost btn-icon" data-tip="Desfazer (Ctrl+Z)">↩</button>
+                <button id="redoBtn" class="btn btn-ghost btn-icon" data-tip="Refazer (Ctrl+Y)">↪</button>
+
+                <div class="controls-divider"></div>
+
+                <!-- Danger actions -->
+                <button id="clearCanvasBtn" class="btn btn-danger btn-sm" data-tip="Limpar Mapa">🗑 Mapa</button>
+                <button id="clearDrawingsBtn" class="btn btn-danger btn-icon" data-tip="Limpar Desenhos">✂</button>
+            </div>
+        </div>
+
+        <div id="feedbackMessage" class="feedback-message hidden"></div>
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <div id="npcDetailPanel">
+        <div class="panel-header">
+            <span class="title-font text-sm font-bold text-white">Detalhes do NPC</span>
+        </div>
+        <div class="panel-body">
+            <div id="npcEmptyState" style="text-align:center;padding:2rem 1rem;color:var(--text-muted);">
+                <p style="font-size:2rem;margin-bottom:0.5rem;">👤</p>
+                <p style="font-size:0.875rem;">Selecione ou crie um NPC para editar seus detalhes.</p>
+            </div>
+            <div id="npcFormContent" class="hidden">
+                <div class="field-group">
+                    <label class="field-label" for="npcName">Nome</label>
+                    <input type="text" id="npcName" class="input-base" placeholder="Nome do NPC/Veículo">
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcType">Tipo</label>
+                    <input type="text" id="npcType" class="input-base" placeholder="Ex: Humano, Mutante, Tanque">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;" class="field-group">
+                    <div>
+                        <label class="field-label" for="npcHpMax">HP Máx</label>
+                        <input type="number" id="npcHpMax" class="input-base" min="0" value="10">
+                    </div>
+                    <div>
+                        <label class="field-label" for="npcHpCurrent">HP Atual</label>
+                        <input type="number" id="npcHpCurrent" class="input-base" min="0" value="10">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcInitiative">Iniciativa</label>
+                    <input type="number" id="npcInitiative" class="input-base" min="0" placeholder="Ex: 15">
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcDescription">Descrição</label>
+                    <textarea id="npcDescription" class="textarea-base" style="height:4.5rem;" placeholder="Detalhes, história, habilidades..."></textarea>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcStats">Estatísticas</label>
+                    <textarea id="npcStats" class="textarea-base" style="height:3.5rem;" placeholder="PV: 30, Defesa: 15, Força: 5"></textarea>
+                </div>
+                <hr class="section-divider">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;" class="field-group">
+                    <div>
+                        <label class="field-label" for="tokenWidthInput">Largura Token</label>
+                        <input type="number" id="tokenWidthInput" class="input-base" min="1" max="10" value="1">
+                    </div>
+                    <div>
+                        <label class="field-label" for="tokenHeightInput">Altura Token</label>
+                        <input type="number" id="tokenHeightInput" class="input-base" min="1" max="10" value="1">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Imagem do Token</label>
+                    <input type="file" id="tokenImageInput" accept="image/*" class="hidden">
+                    <button id="uploadTokenImageBtn" class="btn btn-ghost w-full" style="justify-content:center;">📷 Carregar Imagem</button>
+                    <div id="tokenImagePreviewContainer" class="hidden" style="margin-top:0.5rem;text-align:center;">
+                        <img id="tokenImagePreview" src="" alt="Token" style="max-width:100%;max-height:80px;border-radius:0.375rem;object-fit:cover;border:1px solid var(--border);">
+                        <button id="removeTokenImageBtn" class="btn btn-danger btn-sm" style="margin-top:0.4rem;width:100%;justify-content:center;">Remover Imagem</button>
+                    </div>
+                </div>
+                <div class="field-group" style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="field-label" style="margin:0;flex-shrink:0;">Status:</label>
+                    <button id="toggleEnemyBtn" class="btn btn-sm npc-tag ally">ALIADO</button>
+                </div>
+                <hr class="section-divider">
+                <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                    <button id="saveNpcBtn" class="btn" style="justify-content:center;">💾 Salvar NPC</button>
+                    <button id="addTokenBtn" class="btn btn-success" style="justify-content:center;">🎯 Adicionar ao Mapa</button>
+                    <button id="addToInitiativeBtn" class="btn btn-ghost" style="justify-content:center;">⚡ Adicionar à Iniciativa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOGGLE RIGHT -->
+    <button id="toggleNpcDetailBtn" class="toggle-sidebar-btn">▶</button>
+</div>
+
+<!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-content">
+        <p id="customConfirmMessage" class="text-lg font-semibold" style="color:var(--text-primary);margin-bottom:0.5rem;">Tem certeza?</p>
+        <p id="customConfirmSub" style="color:var(--text-muted);font-size:0.875rem;">Esta ação não pode ser desfeita.</p>
+        <div class="custom-modal-buttons">
+            <button id="customConfirmYes" class="btn btn-danger">Sim</button>
+            <button id="customConfirmNo" class="btn btn-ghost">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- HP Edit Modal -->
+<div id="hpModal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-content" style="max-width:340px;">
+        <h3 class="title-font" style="font-size:1.125rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;" id="hpModalTitle">❤️ Editar HP</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+            <div>
+                <label class="field-label">HP Atual</label>
+                <input type="number" id="hpCurrentInput" class="input-base" min="0">
+            </div>
+            <div>
+                <label class="field-label">HP Máximo</label>
+                <input type="number" id="hpMaxInput" class="input-base" min="0">
+            </div>
+        </div>
+        <div style="display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;margin-bottom:0.875rem;">
+            <button class="btn btn-danger btn-sm" onclick="applyHpDelta(-10)">-10</button>
+            <button class="btn btn-danger btn-sm" onclick="applyHpDelta(-5)">-5</button>
+            <button class="btn btn-danger btn-sm" onclick="applyHpDelta(-1)">-1</button>
+            <button class="btn btn-success btn-sm" onclick="applyHpDelta(1)">+1</button>
+            <button class="btn btn-success btn-sm" onclick="applyHpDelta(5)">+5</button>
+            <button class="btn btn-success btn-sm" onclick="applyHpDelta(10)">+10</button>
+        </div>
+        <div class="custom-modal-buttons">
+            <button id="hpModalSave" class="btn">Salvar</button>
+            <button id="hpModalCancel" class="btn btn-ghost">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Map Settings Modal -->
+<div id="mapSettingsModal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-content" style="max-width:520px;">
+        <h3 class="title-font" style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">⚙️ Configurações do Mapa</h3>
+        <div class="field-group">
+            <label class="field-label" for="mapNameInput">Nome do Mapa</label>
+            <input type="text" id="mapNameInput" class="input-base" placeholder="Nome do mapa">
+        </div>
+        <div class="field-group">
+            <label class="field-label" for="unitInput">Unidade de Distância</label>
+            <input type="text" id="unitInput" class="input-base" placeholder="Ex: metros, pés, quadrados">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;" class="field-group">
+            <div>
+                <label class="field-label" for="gridColsInput">Colunas</label>
+                <input type="number" id="gridColsInput" class="input-base" min="5" max="100" value="20">
+            </div>
+            <div>
+                <label class="field-label" for="gridRowsInput">Linhas</label>
+                <input type="number" id="gridRowsInput" class="input-base" min="5" max="100" value="15">
+            </div>
+            <div>
+                <label class="field-label" for="cellSizeInput">Tamanho Célula (px)</label>
+                <input type="number" id="cellSizeInput" class="input-base" min="20" max="120" value="40">
+            </div>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Cor do Grid</label>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="color" id="gridColorInput" value="#4b5563" style="width:2.5rem;height:2.5rem;border-radius:0.375rem;cursor:pointer;border:1px solid var(--border-light);">
+                <span style="font-size:0.8125rem;color:var(--text-muted);">Cor das linhas do grid</span>
+            </div>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Imagem de Fundo</label>
+            <input type="file" id="mapBackgroundInput" accept="image/*" class="hidden">
+            <button id="uploadMapBackgroundBtn" class="btn btn-ghost" style="justify-content:center;width:100%;">🖼️ Carregar Imagem de Fundo</button>
+            <div id="mapBackgroundPreviewContainer" class="hidden" style="margin-top:0.5rem;text-align:center;">
+                <img id="mapBackgroundPreview" src="" alt="Fundo" style="max-width:100%;max-height:120px;border-radius:0.5rem;object-fit:cover;">
+                <button id="removeMapBackgroundBtn" class="btn btn-danger btn-sm" style="margin-top:0.4rem;width:100%;justify-content:center;">Remover Fundo</button>
+            </div>
+        </div>
+        <div class="field-group">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                <input type="checkbox" id="showGridLabelsInput" checked style="width:1rem;height:1rem;accent-color:var(--accent);">
+                <span class="field-label" style="margin:0;">Mostrar letras/números no grid</span>
+            </label>
+        </div>
+        <div class="custom-modal-buttons">
+            <button id="saveMapSettingsBtn" class="btn">✓ Salvar</button>
+            <button id="cancelMapSettingsBtn" class="btn btn-ghost">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Initiative Add Modal -->
+<div id="initiativeModal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-content" style="max-width:320px;">
+        <h3 class="title-font" style="font-size:1.125rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">⚡ Adicionar à Iniciativa</h3>
+        <div class="field-group">
+            <label class="field-label">Nome</label>
+            <input type="text" id="initNameInput" class="input-base" placeholder="Nome do combatente">
+        </div>
+        <div class="field-group">
+            <label class="field-label">Valor de Iniciativa</label>
+            <input type="number" id="initValueInput" class="input-base" placeholder="Ex: 18">
+        </div>
+        <div class="field-group" style="display:flex;align-items:center;gap:0.5rem;">
+            <input type="checkbox" id="initIsEnemyInput" style="width:1rem;height:1rem;accent-color:var(--accent);">
+            <label class="field-label" style="margin:0;cursor:pointer;">É inimigo?</label>
+        </div>
+        <div class="custom-modal-buttons">
+            <button id="initModalSave" class="btn">Adicionar</button>
+            <button id="initModalCancel" class="btn btn-ghost">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//   ESCUDO DO MESTRE v2 - Enhanced Battle Grid
+// ============================================================
+const D = document;
+const $ = id => D.getElementById(id);
+
+// DOM refs
+const mainScreen = $('mainScreen');
+const mapApplication = $('mapApplication');
+const createNewMapBtn = $('createNewMapBtn');
+const loadExistingMapBtn = $('loadExistingMapBtn');
+const mainLoadMapInput = $('mainLoadMapInput');
+const npcSidebar = $('npcSidebar');
+const npcListEl = $('npcList');
+const newNpcBtn = $('newNpcBtn');
+const npcDetailPanel = $('npcDetailPanel');
+const npcNameInput = $('npcName');
+const npcTypeInput = $('npcType');
+const npcHpMaxInput = $('npcHpMax');
+const npcHpCurrentInput = $('npcHpCurrent');
+const npcInitiativeInput = $('npcInitiative');
+const npcDescriptionTextarea = $('npcDescription');
+const npcStatsTextarea = $('npcStats');
+const tokenWidthInput = $('tokenWidthInput');
+const tokenHeightInput = $('tokenHeightInput');
+const saveNpcBtn = $('saveNpcBtn');
+const addTokenBtn = $('addTokenBtn');
+const addToInitiativeBtn = $('addToInitiativeBtn');
+const toggleEnemyBtn = $('toggleEnemyBtn');
+const removeTokenImageBtn = $('removeTokenImageBtn');
+const feedbackMessage = $('feedbackMessage');
+const mapNameDisplay = $('mapNameDisplay');
+const canvasContainer = $('canvasContainer');
+const canvas = $('gameCanvas');
+const ctx = canvas.getContext('2d');
+const tokenImageInput = $('tokenImageInput');
+const uploadTokenImageBtn = $('uploadTokenImageBtn');
+const tokenImagePreviewContainer = $('tokenImagePreviewContainer');
+const tokenImagePreview = $('tokenImagePreview');
+const npcEmptyState = $('npcEmptyState');
+const npcFormContent = $('npcFormContent');
+const tokenMapControls = $('tokenMapControls');
+const selectedTokenLabel = $('selectedTokenLabel');
+const clearCanvasBtn = $('clearCanvasBtn');
+const zoomInBtn = $('zoomInBtn');
+const zoomOutBtn = $('zoomOutBtn');
+const rulerBtn = $('rulerBtn');
+const moveToolBtn = $('moveToolBtn');
+const drawLineBtn = $('drawLineBtn');
+const eraserBtn = $('eraserBtn');
+const drawColorInput = $('drawColorInput');
+const undoBtn = $('undoBtn');
+const redoBtn = $('redoBtn');
+const clearSelectionBtn = $('clearSelectionBtn');
+const deleteSelectedTokenBtn = $('deleteSelectedTokenBtn');
+const editTokenHpBtn = $('editTokenHpBtn');
+const resetViewBtn = $('resetViewBtn');
+const mapSettingsBtn = $('mapSettingsBtn');
+const clearDrawingsBtn = $('clearDrawingsBtn');
+const saveMapFileBtn = $('saveMapFileBtn');
+const loadMapFileBtn = $('loadMapFileBtn');
+const loadMapInput = $('loadMapInput');
+const customConfirmModal = $('customConfirmModal');
+const customConfirmMessage = $('customConfirmMessage');
+const customConfirmYes = $('customConfirmYes');
+const customConfirmNo = $('customConfirmNo');
+const mapSettingsModal = $('mapSettingsModal');
+const mapNameInput = $('mapNameInput');
+const unitInput = $('unitInput');
+const gridColsInput = $('gridColsInput');
+const gridRowsInput = $('gridRowsInput');
+const cellSizeInput = $('cellSizeInput');
+const gridColorInput = $('gridColorInput');
+const showGridLabelsInput = $('showGridLabelsInput');
+const mapBackgroundInput = $('mapBackgroundInput');
+const uploadMapBackgroundBtn = $('uploadMapBackgroundBtn');
+const mapBackgroundPreviewContainer = $('mapBackgroundPreviewContainer');
+const mapBackgroundPreview = $('mapBackgroundPreview');
+const removeMapBackgroundBtn = $('removeMapBackgroundBtn');
+const saveMapSettingsBtn = $('saveMapSettingsBtn');
+const cancelMapSettingsBtn = $('cancelMapSettingsBtn');
+const toggleNpcListBtn = $('toggleNpcListBtn');
+const toggleNpcDetailBtn = $('toggleNpcDetailBtn');
+const mapTitleOverlay = $('mapTitleOverlay');
+const toggleMapTitleBtn = $('toggleMapTitleBtn');
+const backToMainBtn = $('backToMainBtn');
+const coordDisplay = $('coordDisplay');
+const zoomDisplay = $('zoomDisplay');
+const addInitiativeBtn = $('addInitiativeBtn');
+const nextTurnBtn = $('nextTurnBtn');
+const clearInitiativeBtn = $('clearInitiativeBtn');
+const initiativeListEl = $('initiativeList');
+const hpModal = $('hpModal');
+const hpModalTitle = $('hpModalTitle');
+const hpCurrentInput = $('hpCurrentInput');
+const hpMaxInput = $('hpMaxInput');
+const hpModalSave = $('hpModalSave');
+const hpModalCancel = $('hpModalCancel');
+const initiativeModal = $('initiativeModal');
+const initNameInput = $('initNameInput');
+const initValueInput = $('initValueInput');
+const initIsEnemyInput = $('initIsEnemyInput');
+const initModalSave = $('initModalSave');
+const initModalCancel = $('initModalCancel');
+
+// ============================================================
+//   STATE
+// ============================================================
+let npcs = {};
+let currentNpcId = null;
+let tokens = [];
+let drawings = [];
+let selectedToken = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let confirmCallback = null;
+let zoomLevel = 1.0;
+const ZOOM_FACTOR = 1.15;
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 5.0;
+let panX = 0, panY = 0;
+let isPanning = false;
+let lastMouseX = 0, lastMouseY = 0;
+let currentTool = 'move';
+let rulerStart = null, rulerEnd = null;
+let drawingStart = null, drawingEnd = null;
+let drawColor = '#ef4444';
+const DRAW_WIDTH = 3;
+let mapBackgroundImgObj = null;
+let initiativeOrder = [];
+let currentTurnIndex = 0;
+let hpEditToken = null;
+let feedbackTimer = null;
+
+// Undo/Redo
+let undoStack = [];
+let redoStack = [];
+const MAX_UNDO = 30;
+
+let mapSettings = {
+    name: 'Mapa Padrão',
+    unit: 'quadrados',
+    gridCols: 20,
+    gridRows: 15,
+    backgroundImage: '',
+    gridColor: '#4b5563',
+    showGridLabels: true,
+    cellSize: 40
+};
+
+function GS() { return mapSettings.cellSize || 40; }
+
+// ============================================================
+//   UNDO / REDO
+// ============================================================
+function saveToUndo() {
+    undoStack.push({
+        tokens: JSON.stringify(tokens.map(t => ({...t, imageObj:null}))),
+        drawings: JSON.stringify(drawings)
+    });
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    redoStack = [];
+}
+
+function undo() {
+    if (!undoStack.length) return showFeedback('Nada para desfazer.', 'info');
+    redoStack.push({ tokens: JSON.stringify(tokens.map(t=>({...t,imageObj:null}))), drawings: JSON.stringify(drawings) });
+    const prev = undoStack.pop();
+    applyHistoryState(prev);
+    showFeedback('Desfeito.', 'info');
+}
+
+function redo() {
+    if (!redoStack.length) return showFeedback('Nada para refazer.', 'info');
+    undoStack.push({ tokens: JSON.stringify(tokens.map(t=>({...t,imageObj:null}))), drawings: JSON.stringify(drawings) });
+    const next = redoStack.pop();
+    applyHistoryState(next);
+    showFeedback('Refeito.', 'info');
+}
+
+function applyHistoryState(state) {
+    tokens = JSON.parse(state.tokens).map(t=>({...t,imageObj:null,isDragging:false}));
+    drawings = JSON.parse(state.drawings);
+    reloadTokenImages().then(() => { saveStateToStorage(); drawCanvas(); });
+}
+
+// ============================================================
+//   STORAGE
+// ============================================================
+function saveStateToStorage() {
+    try {
+        localStorage.setItem('mapSettings', JSON.stringify(mapSettings));
+        localStorage.setItem('npcs', JSON.stringify(npcs));
+        localStorage.setItem('tokens', JSON.stringify(tokens.map(t=>({...t,imageObj:null}))));
+        localStorage.setItem('drawings', JSON.stringify(drawings));
+        localStorage.setItem('initiativeOrder', JSON.stringify(initiativeOrder));
+        localStorage.setItem('currentTurnIndex', currentTurnIndex);
+    } catch(e) { console.warn('Storage full or unavailable', e); }
+}
+
+// ============================================================
+//   IMAGE LOADING
+// ============================================================
+function loadMapBackground() {
+    return new Promise(resolve => {
+        if (mapSettings.backgroundImage) {
+            mapBackgroundImgObj = new Image();
+            mapBackgroundImgObj.onload = resolve;
+            mapBackgroundImgObj.onerror = () => { mapBackgroundImgObj = null; resolve(); };
+            mapBackgroundImgObj.src = mapSettings.backgroundImage;
+        } else { mapBackgroundImgObj = null; resolve(); }
+    });
+}
+
+function reloadTokenImages() {
+    return Promise.all(tokens.map(token => {
+        const npc = npcs[token.npcId];
+        if (npc && npc.tokenImageBase64) {
+            return new Promise(res => {
+                const img = new Image();
+                img.onload = () => { token.imageObj = img; res(); };
+                img.onerror = () => { token.imageObj = null; res(); };
+                img.src = npc.tokenImageBase64;
+            });
+        }
+        token.imageObj = null;
+        return Promise.resolve();
+    }));
+}
+
+// ============================================================
+//   SCREEN MANAGEMENT
+// ============================================================
+function showMainScreen() {
+    mainScreen.classList.remove('hidden');
+    mapApplication.classList.add('hidden');
+}
+
+async function showMapApplication(clearCurrentMap = false) {
+    mainScreen.classList.add('hidden');
+    mapApplication.classList.remove('hidden');
+    mapApplication.offsetWidth; // force reflow
+
+    if (clearCurrentMap) {
+        npcs = {}; tokens = []; drawings = []; undoStack = []; redoStack = [];
+        initiativeOrder = []; currentTurnIndex = 0; currentNpcId = null; selectedToken = null;
+        mapSettings = { name:'Novo Mapa', unit:'quadrados', gridCols:20, gridRows:15, backgroundImage:'', gridColor:'#4b5563', showGridLabels:true, cellSize:40 };
+        mapBackgroundImgObj = null;
+        localStorage.clear();
+    } else {
+        const sm = JSON.parse(localStorage.getItem('mapSettings'));
+        if (sm) mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...sm };
+        npcs = JSON.parse(localStorage.getItem('npcs')) || {};
+        const st = JSON.parse(localStorage.getItem('tokens')) || [];
+        tokens = st.map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
+        drawings = JSON.parse(localStorage.getItem('drawings')) || [];
+        initiativeOrder = JSON.parse(localStorage.getItem('initiativeOrder')) || [];
+        currentTurnIndex = parseInt(localStorage.getItem('currentTurnIndex')) || 0;
+    }
+
+    mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+    updateNpcForm(false);
+
+    await Promise.all([loadMapBackground(), reloadTokenImages()]);
+
+    requestAnimationFrame(() => {
+        resizeCanvasAndDraw();
+        renderNpcList();
+        renderInitiative();
+        updateToggleButtonPositions();
+        updateToolButtonsState();
+        updateTokenControlsState();
+    });
+}
+
+// ============================================================
+//   FEEDBACK
+// ============================================================
+function showFeedback(message, type = 'success') {
+    feedbackMessage.textContent = message;
+    feedbackMessage.className = `feedback-message feedback-${type}`;
+    feedbackMessage.classList.remove('hidden');
+    if (feedbackTimer) clearTimeout(feedbackTimer);
+    feedbackTimer = setTimeout(() => feedbackMessage.classList.add('hidden'), 2800);
+}
+
+// ============================================================
+//   CONFIRM MODAL
+// ============================================================
+function showCustomConfirm(message, callback, sub = 'Esta ação não pode ser desfeita.') {
+    customConfirmMessage.textContent = message;
+    $('customConfirmSub').textContent = sub;
+    customConfirmModal.classList.remove('hidden');
+    confirmCallback = callback;
+}
+function hideCustomConfirm() {
+    customConfirmModal.classList.add('hidden');
+    confirmCallback = null;
+}
+
+// ============================================================
+//   NPC MANAGEMENT
+// ============================================================
+function renderNpcList() {
+    npcListEl.innerHTML = '';
+    const ids = Object.keys(npcs);
+    if (!ids.length) {
+        npcListEl.innerHTML = `<p style="font-size:0.8125rem;color:var(--text-muted);text-align:center;padding:1rem 0;">Nenhum NPC ainda.</p>`;
+        return;
+    }
+    ids.forEach(id => {
+        const npc = npcs[id];
+        const div = D.createElement('div');
+        div.className = `npc-list-item ${id === currentNpcId ? 'selected' : ''}`;
+
+        const nameBtn = D.createElement('button');
+        nameBtn.className = 'npc-name-btn';
+        nameBtn.textContent = npc.name || 'NPC Sem Nome';
+        nameBtn.addEventListener('click', () => selectNpc(id));
+
+        // HP display
+        const hpSpan = D.createElement('span');
+        const cur = npc.hpCurrent !== undefined ? npc.hpCurrent : (npc.hpMax || 0);
+        const max = npc.hpMax || 0;
+        if (max > 0) {
+            hpSpan.style.cssText = 'font-size:0.7rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;';
+            const ratio = Math.max(0, Math.min(1, cur/max));
+            const col = ratio > 0.6 ? '#10b981' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
+            hpSpan.innerHTML = `<span style="color:${col};">❤</span> ${cur}/${max}`;
+        }
+
+        const tag = D.createElement('span');
+        tag.className = `npc-tag ${npc.isEnemy ? 'enemy' : 'ally'}`;
+        tag.textContent = npc.isEnemy ? 'INI' : 'ALI';
+        tag.title = 'Clique para alternar';
+        tag.addEventListener('click', e => {
+            e.stopPropagation();
+            npc.isEnemy = !npc.isEnemy;
+            saveStateToStorage();
+            renderNpcList();
+            drawCanvas();
+        });
+
+        const delBtn = D.createElement('button');
+        delBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0 0.2rem;flex-shrink:0;line-height:1;';
+        delBtn.innerHTML = '×';
+        delBtn.title = 'Excluir NPC';
+        delBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            showCustomConfirm(`Excluir "${npc.name || 'NPC'}"?`, confirmed => {
+                if (confirmed) deleteNpc(id);
+                hideCustomConfirm();
+            });
+        });
+
+        div.appendChild(nameBtn);
+        if (max > 0) div.appendChild(hpSpan);
+        div.appendChild(tag);
+        div.appendChild(delBtn);
+        npcListEl.appendChild(div);
+    });
+}
+
+function updateNpcForm(show) {
+    npcEmptyState.classList.toggle('hidden', show);
+    npcFormContent.classList.toggle('hidden', !show);
+}
+
+function autoSaveCurrentNpc() {
+    if (!currentNpcId || !npcs[currentNpcId]) return;
+    const isEnemy = toggleEnemyBtn.classList.contains('enemy');
+    npcs[currentNpcId] = {
+        ...npcs[currentNpcId],
+        name: npcNameInput.value,
+        type: npcTypeInput.value,
+        hpMax: parseInt(npcHpMaxInput.value) || 0,
+        hpCurrent: parseInt(npcHpCurrentInput.value) || 0,
+        initiative: parseInt(npcInitiativeInput.value) || 0,
+        description: npcDescriptionTextarea.value,
+        stats: npcStatsTextarea.value,
+        tokenWidth: parseInt(tokenWidthInput.value) || 1,
+        tokenHeight: parseInt(tokenHeightInput.value) || 1,
+        isEnemy: isEnemy
+    };
+}
+
+function selectNpc(id) {
+    autoSaveCurrentNpc();
+    currentNpcId = id;
+    const npc = npcs[id];
+    npcNameInput.value = npc.name || '';
+    npcTypeInput.value = npc.type || '';
+    npcHpMaxInput.value = npc.hpMax !== undefined ? npc.hpMax : 10;
+    npcHpCurrentInput.value = npc.hpCurrent !== undefined ? npc.hpCurrent : (npc.hpMax || 10);
+    npcInitiativeInput.value = npc.initiative || '';
+    npcDescriptionTextarea.value = npc.description || '';
+    npcStatsTextarea.value = npc.stats || '';
+    tokenWidthInput.value = npc.tokenWidth || 1;
+    tokenHeightInput.value = npc.tokenHeight || 1;
+    const isEnemy = !!npc.isEnemy;
+    toggleEnemyBtn.textContent = isEnemy ? 'INIMIGO' : 'ALIADO';
+    toggleEnemyBtn.className = `btn btn-sm npc-tag ${isEnemy ? 'enemy' : 'ally'}`;
+    if (npc.tokenImageBase64) {
+        tokenImagePreview.src = npc.tokenImageBase64;
+        tokenImagePreviewContainer.classList.remove('hidden');
+    } else {
+        tokenImagePreview.src = '';
+        tokenImagePreviewContainer.classList.add('hidden');
+    }
+    updateNpcForm(true);
+    renderNpcList();
+}
+
+function createNewNpc() {
+    autoSaveCurrentNpc();
+    const newId = `npc_${Date.now()}`;
+    npcs[newId] = { name:'Novo NPC', type:'', hpMax:10, hpCurrent:10, initiative:0, description:'', stats:'', tokenWidth:1, tokenHeight:1, tokenImageBase64:'', isEnemy:false };
+    saveStateToStorage();
+    selectNpc(newId);
+    showFeedback('Novo NPC criado!', 'success');
+}
+
+function saveNpc() {
+    if (!currentNpcId) return showFeedback('Nenhum NPC selecionado.', 'error');
+    autoSaveCurrentNpc();
+    saveStateToStorage();
+    renderNpcList();
+    drawCanvas();
+    showFeedback('NPC salvo!', 'success');
+}
+
+function deleteNpc(id) {
+    delete npcs[id];
+    tokens = tokens.filter(t => t.npcId !== id);
+    if (currentNpcId === id) { currentNpcId = null; updateNpcForm(false); }
+    selectedToken = tokens.includes(selectedToken) ? selectedToken : null;
+    saveStateToStorage();
+    renderNpcList();
+    drawCanvas();
+    updateTokenControlsState();
+    showFeedback('NPC excluído.', 'success');
+}
+
+// ============================================================
+//   INITIATIVE
+// ============================================================
+function renderInitiative() {
+    initiativeListEl.innerHTML = '';
+    if (!initiativeOrder.length) {
+        initiativeListEl.innerHTML = `<p style="font-size:0.75rem;color:var(--text-muted);text-align:center;padding:0.5rem;">Vazio</p>`;
+        return;
+    }
+    const sorted = [...initiativeOrder].sort((a,b) => b.value - a.value);
+    sorted.forEach((item, idx) => {
+        const isActive = idx === (currentTurnIndex % sorted.length);
+        const div = D.createElement('div');
+        div.className = `initiative-item ${isActive ? 'active' : ''}`;
+        div.style.color = item.isEnemy ? 'var(--enemy)' : 'var(--ally)';
+
+        const badge = D.createElement('span');
+        badge.className = 'initiative-order';
+        badge.textContent = item.value;
+
+        const nameSpan = D.createElement('span');
+        nameSpan.style.cssText = 'flex:1;font-size:0.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        nameSpan.textContent = item.name;
+
+        const delBtn = D.createElement('button');
+        delBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.875rem;padding:0;';
+        delBtn.textContent = '×';
+        delBtn.addEventListener('click', () => {
+            initiativeOrder = initiativeOrder.filter(i => i.id !== item.id);
+            if (currentTurnIndex >= initiativeOrder.length) currentTurnIndex = 0;
+            saveStateToStorage();
+            renderInitiative();
+        });
+
+        div.appendChild(badge);
+        div.appendChild(nameSpan);
+        div.appendChild(delBtn);
+        initiativeListEl.appendChild(div);
+    });
+}
+
+function addToInitiative(name, value, isEnemy) {
+    initiativeOrder.push({ id:`init_${Date.now()}`, name, value, isEnemy });
+    saveStateToStorage();
+    renderInitiative();
+}
+
+// ============================================================
+//   CANVAS MATH
+// ============================================================
+function screenToWorld(sx, sy) {
+    return { x: (sx - panX) / (GS() * zoomLevel), y: (sy - panY) / (GS() * zoomLevel) };
+}
+
+// ============================================================
+//   DRAW
+// ============================================================
+function drawGrid() {
+    const cs = GS();
+    if (mapBackgroundImgObj) {
+        ctx.drawImage(mapBackgroundImgObj, 0, 0, mapSettings.gridCols * cs, mapSettings.gridRows * cs);
+    }
+
+    ctx.strokeStyle = mapSettings.gridColor || '#4b5563';
+    ctx.lineWidth = 1 / zoomLevel;
+
+    for (let x = 0; x <= mapSettings.gridCols; x++) {
+        ctx.beginPath(); ctx.moveTo(x * cs, 0); ctx.lineTo(x * cs, mapSettings.gridRows * cs); ctx.stroke();
+    }
+    for (let y = 0; y <= mapSettings.gridRows; y++) {
+        ctx.beginPath(); ctx.moveTo(0, y * cs); ctx.lineTo(mapSettings.gridCols * cs, y * cs); ctx.stroke();
+    }
+
+    // Grid labels (letters + numbers)
+    if (mapSettings.showGridLabels !== false) {
+        const fs = Math.max(6, Math.min(11, cs * 0.28)) / zoomLevel;
+        ctx.fillStyle = 'rgba(156,163,175,0.45)';
+        ctx.font = `${fs}px Inter`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        for (let x = 0; x < mapSettings.gridCols; x++) {
+            const letter = x < 26 ? String.fromCharCode(65+x) : String.fromCharCode(65+Math.floor(x/26)-1)+String.fromCharCode(65+(x%26));
+            ctx.fillText(letter, (x + 0.5) * cs, 1.5 / zoomLevel);
+        }
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        for (let y = 0; y < mapSettings.gridRows; y++) {
+            ctx.fillText(y + 1, 1.5 / zoomLevel, (y + 0.5) * cs);
+        }
+    }
+}
+
+function getHpColor(cur, max) {
+    if (!max) return '#60a5fa';
+    const r = cur / max;
+    return r > 0.6 ? '#10b981' : r > 0.3 ? '#f59e0b' : '#ef4444';
+}
+
+function drawTokens() {
+    const cs = GS();
+    tokens.forEach(token => {
+        const tw = token.widthInGrids * cs;
+        const th = token.heightInGrids * cs;
+        const x = token.x * cs, y = token.y * cs;
+        const npc = npcs[token.npcId];
+        const isSelected = selectedToken === token;
+        const isEnemy = npc?.isEnemy;
+
+        ctx.save();
+        const r = Math.min(3 / zoomLevel, tw / 4, th / 4);
+
+        if (token.imageObj && token.imageObj.complete && token.imageObj.naturalWidth > 0) {
+            ctx.beginPath();
+            ctx.roundRect(x, y, tw, th, r);
+            ctx.clip();
+            ctx.drawImage(token.imageObj, x, y, tw, th);
+        } else {
+            ctx.fillStyle = isEnemy ? '#450a0a' : '#0c1a38';
+            ctx.beginPath();
+            ctx.roundRect(x, y, tw, th, r);
+            ctx.fill();
+            const fs = Math.max(8, Math.min(cs * 0.45, 22)) / zoomLevel;
+            ctx.fillStyle = isEnemy ? '#fca5a5' : '#93c5fd';
+            ctx.font = `bold ${fs}px Inter`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', x + tw/2, y + th/2);
+        }
+        ctx.restore();
+
+        // HP bar
+        if (npc?.hpMax > 0) {
+            const bh = Math.max(3, cs * 0.09) / zoomLevel;
+            const by = y + th - bh - 1/zoomLevel;
+            const ratio = Math.max(0, Math.min(1, (npc.hpCurrent || 0) / npc.hpMax));
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(x, by, tw, bh);
+            ctx.fillStyle = getHpColor(npc.hpCurrent, npc.hpMax);
+            ctx.fillRect(x, by, tw * ratio, bh);
+        }
+
+        // Name label
+        if (npc?.name && cs * zoomLevel > 22) {
+            const fs = Math.max(6, Math.min(9, cs * 0.22)) / zoomLevel;
+            const labelH = fs + 4 / zoomLevel;
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(x, y + th + 0.5/zoomLevel, tw, labelH);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = `${fs}px Inter`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            const maxChars = Math.max(2, Math.floor(tw / (fs * 0.58)));
+            const displayName = npc.name.length > maxChars ? npc.name.substring(0, maxChars-1)+'…' : npc.name;
+            ctx.fillText(displayName, x + tw/2, y + th + 1.5/zoomLevel);
+        }
+
+        // Selection highlight
+        if (isSelected) {
+            ctx.strokeStyle = '#fde68a';
+            ctx.lineWidth = 2.5 / zoomLevel;
+            ctx.setLineDash([5/zoomLevel, 3/zoomLevel]);
+            ctx.strokeRect(x - 1.5/zoomLevel, y - 1.5/zoomLevel, tw + 3/zoomLevel, th + 3/zoomLevel);
+            ctx.setLineDash([]);
+        }
+
+        // Enemy border (only when not selected)
+        if (isEnemy && !isSelected) {
+            ctx.strokeStyle = 'rgba(239,68,68,0.6)';
+            ctx.lineWidth = 2 / zoomLevel;
+            ctx.strokeRect(x + 0.5/zoomLevel, y + 0.5/zoomLevel, tw - 1/zoomLevel, th - 1/zoomLevel);
+        }
+    });
+}
+
+function drawRuler() {
+    if (!rulerStart || !rulerEnd) return;
+    const cs = GS();
+    const sx = rulerStart.x * cs, sy = rulerStart.y * cs;
+    const ex = rulerEnd.x * cs, ey = rulerEnd.y * cs;
+
+    ctx.save();
+    ctx.shadowColor = '#fde68a'; ctx.shadowBlur = 8 / zoomLevel;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 2 / zoomLevel;
+    ctx.setLineDash([6/zoomLevel, 3/zoomLevel]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.shadowBlur = 0; ctx.restore();
+
+    // Endpoints
+    [{ x:sx,y:sy },{ x:ex,y:ey }].forEach(p => {
+        ctx.fillStyle = '#fde68a';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4/zoomLevel, 0, Math.PI*2); ctx.fill();
+    });
+
+    // Distance label
+    const dx = rulerEnd.x - rulerStart.x, dy = rulerEnd.y - rulerStart.y;
+    const eucl = Math.sqrt(dx*dx + dy*dy).toFixed(1);
+    const manh = Math.abs(Math.round(dx)) + Math.abs(Math.round(dy));
+    const mx = (sx+ex)/2, my = (sy+ey)/2;
+    const fs = 13 / zoomLevel;
+    ctx.font = `bold ${fs}px Inter`;
+    const label = `${eucl} ${mapSettings.unit} (▼${manh})`;
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillRect(mx - tw/2 - 4/zoomLevel, my - fs - 2/zoomLevel, tw + 8/zoomLevel, fs + 6/zoomLevel);
+    ctx.fillStyle = '#fde68a';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(label, mx, my + 2/zoomLevel);
+}
+
+function drawAllDrawings() {
+    const cs = GS();
+    drawings.forEach(d => {
+        if (d.type !== 'line') return;
+        ctx.beginPath();
+        ctx.moveTo(d.startX * cs, d.startY * cs);
+        ctx.lineTo(d.endX * cs, d.endY * cs);
+        ctx.strokeStyle = d.color || '#ef4444';
+        ctx.lineWidth = (d.width || 3) / zoomLevel;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    });
+    if (currentTool === 'draw-line' && drawingStart && drawingEnd) {
+        ctx.beginPath();
+        ctx.moveTo(drawingStart.x * cs, drawingStart.y * cs);
+        ctx.lineTo(drawingEnd.x * cs, drawingEnd.y * cs);
+        ctx.strokeStyle = drawColor;
+        ctx.lineWidth = DRAW_WIDTH / zoomLevel;
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = 0.65;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
+}
+
+function resizeCanvasAndDraw() {
+    canvas.width = canvasContainer.clientWidth;
+    canvas.height = canvasContainer.clientHeight;
+    const cs = GS();
+    const gw = mapSettings.gridCols * cs * zoomLevel;
+    const gh = mapSettings.gridRows * cs * zoomLevel;
+    if (gw < canvas.width) panX = (canvas.width - gw) / 2;
+    else panX = Math.max(canvas.width - gw, Math.min(0, panX));
+    if (gh < canvas.height) panY = (canvas.height - gh) / 2;
+    else panY = Math.max(canvas.height - gh, Math.min(0, panY));
+    drawCanvas();
+    zoomDisplay.textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+function drawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+    drawGrid();
+    drawTokens();
+    drawRuler();
+    drawAllDrawings();
+    ctx.restore();
+}
+
+function applyZoom(factor, cx, cy) {
+    const oldZ = zoomLevel;
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel * factor));
+    panX = cx - ((cx - panX) / oldZ) * zoomLevel;
+    panY = cy - ((cy - panY) / oldZ) * zoomLevel;
+    resizeCanvasAndDraw();
+}
+
+// ============================================================
+//   TOKEN MANAGEMENT
+// ============================================================
+function addTokenToCanvas() {
+    if (!currentNpcId) return showFeedback('Selecione um NPC primeiro.', 'error');
+    autoSaveCurrentNpc();
+    const tokenWidth = parseInt(tokenWidthInput.value) || 1;
+    const tokenHeight = parseInt(tokenHeightInput.value) || 1;
+
+    function overlaps(x, y) {
+        return tokens.some(t =>
+            x < t.x+t.widthInGrids && x+tokenWidth > t.x && y < t.y+t.heightInGrids && y+tokenHeight > t.y
+        );
+    }
+
+    let sx = Math.max(0, Math.min(Math.floor((mapSettings.gridCols-tokenWidth)/2), mapSettings.gridCols-tokenWidth));
+    let sy = Math.max(0, Math.min(Math.floor((mapSettings.gridRows-tokenHeight)/2), mapSettings.gridRows-tokenHeight));
+
+    if (overlaps(sx, sy)) {
+        let found = false;
+        outer: for (let y = 0; y <= mapSettings.gridRows-tokenHeight; y++) {
+            for (let x = 0; x <= mapSettings.gridCols-tokenWidth; x++) {
+                if (!overlaps(x, y)) { sx=x; sy=y; found=true; break outer; }
+            }
+        }
+        if (!found) return showFeedback('Sem espaço no mapa!', 'error');
+    }
+
+    saveToUndo();
+    const npcData = npcs[currentNpcId];
+    const newToken = { id:`token_${Date.now()}`, npcId:currentNpcId, x:sx, y:sy, widthInGrids:tokenWidth, heightInGrids:tokenHeight, imageObj:null, isDragging:false };
+    tokens.push(newToken);
+
+    if (npcData?.tokenImageBase64) {
+        const img = new Image();
+        img.onload = () => { newToken.imageObj = img; drawCanvas(); };
+        img.src = npcData.tokenImageBase64;
+    }
+
+    saveStateToStorage();
+    // Broadcast the new token + its NPC metadata (without base64 image — sent separately via chunks)
+    broadcast({
+        type: 'token_add',
+        token: { id:newToken.id, npcId:newToken.npcId, x:newToken.x, y:newToken.y, widthInGrids:newToken.widthInGrids, heightInGrids:newToken.heightInGrids },
+        npc: { id:currentNpcId, name:npcData?.name||'', type:npcData?.type||'', hpMax:npcData?.hpMax||0, hpCurrent:npcData?.hpCurrent||0, isEnemy:!!npcData?.isEnemy, initiative:npcData?.initiative||0, stats:npcData?.stats||'', description:npcData?.description||'' }
+    });
+    // Send image chunks separately if image exists
+    if (npcData?.tokenImageBase64) {
+        broadcastImageChunks(currentNpcId, npcData.tokenImageBase64);
+    }
+    drawCanvas();
+    showFeedback('Token adicionado!', 'success');
+}
+
+function deleteSelectedToken() {
+    if (!selectedToken) return;
+    saveToUndo();
+    const tokenId = selectedToken.id;
+    tokens = tokens.filter(t => t !== selectedToken);
+    selectedToken = null;
+    saveStateToStorage();
+    broadcast({ type:'token_delete', tokenId });
+    drawCanvas();
+    updateTokenControlsState();
+    showFeedback('Token removido.', 'success');
+}
+
+// ============================================================
+//   HP EDITING
+// ============================================================
+window.applyHpDelta = function(delta) {
+    const cur = parseInt(hpCurrentInput.value) || 0;
+    const max = parseInt(hpMaxInput.value) || 0;
+    hpCurrentInput.value = Math.max(0, max ? Math.min(max, cur+delta) : cur+delta);
+};
+
+function openHpModal(token) {
+    hpEditToken = token;
+    const npc = npcs[token.npcId];
+    hpModalTitle.textContent = `❤️ HP — ${npc?.name || 'Token'}`;
+    hpCurrentInput.value = npc?.hpCurrent ?? 0;
+    hpMaxInput.value = npc?.hpMax ?? 0;
+    hpModal.classList.remove('hidden');
+}
+
+hpModalSave.addEventListener('click', () => {
+    if (!hpEditToken) return;
+    const npc = npcs[hpEditToken.npcId];
+    if (npc) {
+        npc.hpMax = parseInt(hpMaxInput.value) || 0;
+        npc.hpCurrent = Math.max(0, npc.hpMax ? Math.min(npc.hpMax, parseInt(hpCurrentInput.value)||0) : parseInt(hpCurrentInput.value)||0);
+        if (currentNpcId === hpEditToken.npcId) {
+            npcHpMaxInput.value = npc.hpMax;
+            npcHpCurrentInput.value = npc.hpCurrent;
+        }
+        saveStateToStorage(); renderNpcList(); drawCanvas();
+        broadcast({ type:'hp_update', npcId:hpEditToken.npcId, hpCurrent:npc.hpCurrent, hpMax:npc.hpMax });
+    }
+    hpModal.classList.add('hidden'); hpEditToken = null;
+});
+hpModalCancel.addEventListener('click', () => { hpModal.classList.add('hidden'); hpEditToken = null; });
+
+// ============================================================
+//   CANVAS EVENTS
+// ============================================================
+function getCanvasPos(e) {
+    const r = canvas.getBoundingClientRect();
+    if (e.touches?.length > 0) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function onPointerDown(e) {
+    const isRightBtn = e.button === 2 || e.which === 3;
+    const isMiddle = e.button === 1;
+    if (isRightBtn || isMiddle) {
+        e.preventDefault();
+        isPanning = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        canvas.classList.add('cur-grabbing');
+        return;
+    }
+
+    const pos = getCanvasPos(e);
+    const world = screenToWorld(pos.x, pos.y);
+
+    if (currentTool === 'move') {
+        let found = false;
+        for (let i = tokens.length-1; i >= 0; i--) {
+            const t = tokens[i];
+            if (world.x >= t.x && world.x < t.x+t.widthInGrids && world.y >= t.y && world.y < t.y+t.heightInGrids) {
+                selectedToken = t;
+                t.isDragging = true;
+                dragOffsetX = world.x - t.x;
+                dragOffsetY = world.y - t.y;
+                found = true;
+                // Move to top of draw order
+                tokens.splice(i,1); tokens.push(t);
+                break;
+            }
+        }
+        if (!found) selectedToken = null;
+    } else if (currentTool === 'ruler') {
+        rulerStart = { x:world.x, y:world.y }; rulerEnd = { ...rulerStart };
+    } else if (currentTool === 'draw-line') {
+        drawingStart = { x:world.x, y:world.y }; drawingEnd = { ...drawingStart };
+    } else if (currentTool === 'eraser') {
+        eraseAt(world);
+    }
+
+    drawCanvas();
+    updateTokenControlsState();
+}
+
+function onPointerMove(e) {
+    const pos = getCanvasPos(e);
+    const world = screenToWorld(pos.x, pos.y);
+    const gx = Math.floor(world.x), gy = Math.floor(world.y);
+
+    if (gx >= 0 && gx < mapSettings.gridCols && gy >= 0 && gy < mapSettings.gridRows) {
+        const letter = gx < 26 ? String.fromCharCode(65+gx) : String.fromCharCode(65+Math.floor(gx/26)-1)+String.fromCharCode(65+(gx%26));
+        coordDisplay.textContent = `${letter}${gy+1}`;
+        coordDisplay.style.display = 'block';
+    } else {
+        coordDisplay.style.display = 'none';
+    }
+
+    if (isPanning) {
+        panX += e.clientX - lastMouseX;
+        panY += e.clientY - lastMouseY;
+        lastMouseX = e.clientX; lastMouseY = e.clientY;
+        resizeCanvasAndDraw();
+        return;
+    }
+
+    if (currentTool === 'move' && selectedToken?.isDragging) {
+        const tw = selectedToken.widthInGrids, th = selectedToken.heightInGrids;
+        let nx = Math.floor(world.x - dragOffsetX);
+        let ny = Math.floor(world.y - dragOffsetY);
+        nx = Math.max(0, Math.min(nx, mapSettings.gridCols - tw));
+        ny = Math.max(0, Math.min(ny, mapSettings.gridRows - th));
+        const overlaps = tokens.some(ot => ot.id !== selectedToken.id &&
+            nx < ot.x+ot.widthInGrids && nx+tw > ot.x && ny < ot.y+ot.heightInGrids && ny+th > ot.y);
+        if (!overlaps) { selectedToken.x = nx; selectedToken.y = ny; }
+        drawCanvas();
+    } else if (currentTool === 'ruler' && rulerStart) {
+        rulerEnd = { x:world.x, y:world.y }; drawCanvas();
+    } else if (currentTool === 'draw-line' && drawingStart) {
+        drawingEnd = { x:world.x, y:world.y }; drawCanvas();
+    } else if (currentTool === 'eraser' && e.buttons === 1) {
+        eraseAt(world);
+    }
+}
+
+function eraseAt(world) {
+    const before = drawings.length;
+    drawings = drawings.filter(d => {
+        if (d.type !== 'line') return true;
+        const ax=d.startX, ay=d.startY, bx=d.endX, by=d.endY;
+        const dx=bx-ax, dy=by-ay, len2=dx*dx+dy*dy;
+        if (len2 === 0) return Math.hypot(world.x-ax, world.y-ay) > 0.5;
+        const t = Math.max(0, Math.min(1, ((world.x-ax)*dx+(world.y-ay)*dy)/len2));
+        return Math.hypot(world.x-(ax+t*dx), world.y-(ay+t*dy)) > 0.5;
+    });
+    if (drawings.length !== before) {
+        saveStateToStorage();
+        broadcast({ type:'drawings_sync', drawings });
+        drawCanvas();
+    }
+}
+
+function onPointerUp(e) {
+    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    if (currentTool === 'move' && selectedToken?.isDragging) {
+        selectedToken.isDragging = false;
+        saveToUndo();
+        saveStateToStorage();
+        broadcast({ type:'token_move', tokenId:selectedToken.id, x:selectedToken.x, y:selectedToken.y });
+    } else if (currentTool === 'draw-line' && drawingStart && drawingEnd) {
+        const ddx = drawingEnd.x - drawingStart.x, ddy = drawingEnd.y - drawingStart.y;
+        if (Math.hypot(ddx, ddy) > 0.05) {
+            saveToUndo();
+            const newDrawing = { type:'line', startX:drawingStart.x, startY:drawingStart.y, endX:drawingEnd.x, endY:drawingEnd.y, color:drawColor, width:DRAW_WIDTH };
+            drawings.push(newDrawing);
+            saveStateToStorage();
+            broadcast({ type:'drawing_add', drawing:newDrawing });
+        }
+        drawingStart = null; drawingEnd = null;
+    }
+    drawCanvas();
+    updateTokenControlsState();
+}
+
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+canvas.addEventListener('mouseup', onPointerUp);
+canvas.addEventListener('mouseleave', () => {
+    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    coordDisplay.style.display = 'none';
+    if (currentTool === 'draw-line' && drawingStart) { drawingStart=null; drawingEnd=null; drawCanvas(); }
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Touch support
+canvas.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, { passive:false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive:false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(e); }, { passive:false });
+
+// Scroll to zoom (centered on cursor)
+canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    applyZoom(e.deltaY < 0 ? ZOOM_FACTOR : 1/ZOOM_FACTOR, e.clientX - r.left, e.clientY - r.top);
+}, { passive:false });
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); redo(); }
+    else if (e.key === 'm' || e.key === 'M') setTool('move');
+    else if (e.key === 'r' || e.key === 'R') setTool('ruler');
+    else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
+    else if (e.key === 'e' || e.key === 'E') setTool('eraser');
+    else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
+    else if (e.key === '-') applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2);
+    else if (e.key === 'Delete' && selectedToken) deleteSelectedToken();
+    else if (e.key === 'Escape') { selectedToken=null; updateTokenControlsState(); drawCanvas(); }
+});
+
+// ============================================================
+//   TOOL MANAGEMENT
+// ============================================================
+function setTool(tool) {
+    const prev = currentTool;
+    currentTool = tool;
+    if (tool !== 'ruler') { rulerStart=null; rulerEnd=null; }
+    if (tool !== 'draw-line') { drawingStart=null; drawingEnd=null; }
+    updateToolButtonsState();
+    if (prev !== tool) drawCanvas();
+    canvas.className = '';
+    canvas.classList.add(tool === 'ruler' || tool === 'draw-line' || tool === 'eraser' ? 'cur-crosshair' : 'cur-grab');
+}
+
+function updateToolButtonsState() {
+    [moveToolBtn, rulerBtn, drawLineBtn, eraserBtn].forEach(b => b.classList.remove('active-tool'));
+    const map = { move:moveToolBtn, ruler:rulerBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
+    if (map[currentTool]) map[currentTool].classList.add('active-tool');
+}
+
+function updateTokenControlsState() {
+    if (selectedToken) {
+        tokenMapControls.classList.remove('hidden');
+        selectedTokenLabel.textContent = npcs[selectedToken.npcId]?.name || 'Token';
+    } else {
+        tokenMapControls.classList.add('hidden');
+    }
+}
+
+// ============================================================
+//   SIDEBAR TOGGLES
+// ============================================================
+function updateToggleButtonPositions() {
+    const sw = 280;
+    const lc = npcSidebar.classList.contains('collapsed');
+    const rc = npcDetailPanel.classList.contains('collapsed');
+    toggleNpcListBtn.style.left = lc ? '0' : `${sw}px`;
+    toggleNpcDetailBtn.style.right = rc ? '0' : `${sw}px`;
+}
+
+toggleNpcListBtn.addEventListener('click', () => {
+    npcSidebar.classList.toggle('collapsed');
+    toggleNpcListBtn.innerHTML = npcSidebar.classList.contains('collapsed') ? '▶' : '◀';
+    updateToggleButtonPositions();
+    setTimeout(resizeCanvasAndDraw, 270);
+});
+
+toggleNpcDetailBtn.addEventListener('click', () => {
+    npcDetailPanel.classList.toggle('collapsed');
+    toggleNpcDetailBtn.innerHTML = npcDetailPanel.classList.contains('collapsed') ? '◀' : '▶';
+    updateToggleButtonPositions();
+    setTimeout(resizeCanvasAndDraw, 270);
+});
+
+toggleMapTitleBtn.addEventListener('click', () => {
+    mapTitleOverlay.classList.toggle('collapsed');
+    toggleMapTitleBtn.innerHTML = mapTitleOverlay.classList.contains('collapsed') ? '▼' : '▲';
+});
+
+// ============================================================
+//   TOOL BUTTON LISTENERS
+// ============================================================
+moveToolBtn.addEventListener('click', () => setTool('move'));
+rulerBtn.addEventListener('click', () => setTool(currentTool === 'ruler' ? 'move' : 'ruler'));
+drawLineBtn.addEventListener('click', () => setTool(currentTool === 'draw-line' ? 'move' : 'draw-line'));
+eraserBtn.addEventListener('click', () => setTool(currentTool === 'eraser' ? 'move' : 'eraser'));
+drawColorInput.addEventListener('input', e => { drawColor = e.target.value; });
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+zoomInBtn.addEventListener('click', () => applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2));
+zoomOutBtn.addEventListener('click', () => applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2));
+resetViewBtn.addEventListener('click', () => { zoomLevel=1.0; panX=0; panY=0; resizeCanvasAndDraw(); });
+
+clearCanvasBtn.addEventListener('click', () => {
+    showCustomConfirm('Limpar todo o mapa (tokens e desenhos)?', confirmed => {
+        if (confirmed) {
+            saveToUndo(); tokens=[]; drawings=[]; selectedToken=null;
+            saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+            showFeedback('Mapa limpo!','success');
+            broadcast({ type:'map_clear' });
+        }
+        hideCustomConfirm();
+    });
+});
+
+clearDrawingsBtn.addEventListener('click', () => {
+    showCustomConfirm('Limpar todos os desenhos?', confirmed => {
+        if (confirmed) {
+            saveToUndo(); drawings=[];
+            saveStateToStorage(); drawCanvas();
+            showFeedback('Desenhos limpos!','success');
+            broadcast({ type:'drawings_sync', drawings:[] });
+        }
+        hideCustomConfirm();
+    });
+});
+
+clearSelectionBtn.addEventListener('click', () => { selectedToken=null; updateTokenControlsState(); drawCanvas(); });
+deleteSelectedTokenBtn.addEventListener('click', deleteSelectedToken);
+editTokenHpBtn.addEventListener('click', () => { if (selectedToken) openHpModal(selectedToken); });
+
+// ============================================================
+//   NPC BUTTON LISTENERS
+// ============================================================
+newNpcBtn.addEventListener('click', createNewNpc);
+saveNpcBtn.addEventListener('click', saveNpc);
+addTokenBtn.addEventListener('click', addTokenToCanvas);
+uploadTokenImageBtn.addEventListener('click', () => tokenImageInput.click());
+
+removeTokenImageBtn.addEventListener('click', () => {
+    if (!currentNpcId) return;
+    npcs[currentNpcId].tokenImageBase64 = '';
+    tokenImagePreview.src = '';
+    tokenImagePreviewContainer.classList.add('hidden');
+    tokens.filter(t=>t.npcId===currentNpcId).forEach(t=>{ t.imageObj=null; });
+    saveStateToStorage(); drawCanvas();
+});
+
+toggleEnemyBtn.addEventListener('click', () => {
+    const wasEnemy = toggleEnemyBtn.classList.contains('enemy');
+    toggleEnemyBtn.classList.toggle('enemy', !wasEnemy);
+    toggleEnemyBtn.classList.toggle('ally', wasEnemy);
+    toggleEnemyBtn.textContent = wasEnemy ? 'ALIADO' : 'INIMIGO';
+    if (currentNpcId && npcs[currentNpcId]) {
+        npcs[currentNpcId].isEnemy = !wasEnemy;
+        saveStateToStorage(); renderNpcList(); drawCanvas();
+        broadcast({ type:'npc_update', npcId:currentNpcId, patch:{ isEnemy:!wasEnemy } });
+    }
+});
+
+tokenImageInput.addEventListener('change', e => {
+    if (!e.target.files.length || !currentNpcId) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const base64 = ev.target.result;
+        tokenImagePreview.src = base64;
+        tokenImagePreviewContainer.classList.remove('hidden');
+        npcs[currentNpcId].tokenImageBase64 = base64;
+        saveStateToStorage();
+        // Update imageObj on any tokens already on the canvas for this NPC
+        tokens.filter(t=>t.npcId===currentNpcId).forEach(t=>{
+            const img=new Image();
+            img.onload=()=>{t.imageObj=img;drawCanvas();};
+            img.src=base64;
+        });
+        showFeedback('Imagem carregada!','success');
+        // Passo 3: broadcast the image to all connected peers as chunks
+        broadcastImageChunks(currentNpcId, base64);
+        // Also broadcast updated NPC metadata so peers know this NPC has an image now
+        const npc = npcs[currentNpcId];
+        broadcast({ type:'npc_update', npcId:currentNpcId, patch:{
+            name: npc.name, type: npc.type, hpMax: npc.hpMax, hpCurrent: npc.hpCurrent,
+            isEnemy: npc.isEnemy, initiative: npc.initiative, stats: npc.stats,
+            description: npc.description
+            // tokenImageBase64 intentionally omitted — delivered via chunks
+        }});
+    };
+    reader.readAsDataURL(e.target.files[0]);
+    e.target.value='';
+});
+
+// ============================================================
+//   INITIATIVE LISTENERS
+// ============================================================
+addInitiativeBtn.addEventListener('click', () => {
+    if (currentNpcId && npcs[currentNpcId]) {
+        const npc = npcs[currentNpcId];
+        initNameInput.value = npc.name || '';
+        initValueInput.value = npc.initiative || 0;
+        initIsEnemyInput.checked = !!npc.isEnemy;
+    } else {
+        initNameInput.value = ''; initValueInput.value = 0; initIsEnemyInput.checked = false;
+    }
+    initiativeModal.classList.remove('hidden');
+});
+
+addToInitiativeBtn.addEventListener('click', () => {
+    if (!currentNpcId || !npcs[currentNpcId]) return showFeedback('Selecione um NPC.','error');
+    autoSaveCurrentNpc();
+    const npc = npcs[currentNpcId];
+    addToInitiative(npc.name||'NPC', npc.initiative||0, !!npc.isEnemy);
+    showFeedback(`${npc.name} adicionado à iniciativa!`,'success');
+});
+
+initModalSave.addEventListener('click', () => {
+    addToInitiative(initNameInput.value.trim()||'Combatente', parseInt(initValueInput.value)||0, initIsEnemyInput.checked);
+    initiativeModal.classList.add('hidden');
+    showFeedback('Adicionado!','success');
+});
+initModalCancel.addEventListener('click', () => initiativeModal.classList.add('hidden'));
+
+nextTurnBtn.addEventListener('click', () => {
+    if (!initiativeOrder.length) return;
+    currentTurnIndex = (currentTurnIndex + 1) % initiativeOrder.length;
+    const sorted = [...initiativeOrder].sort((a,b)=>b.value-a.value);
+    const cur = sorted[currentTurnIndex % sorted.length];
+    saveStateToStorage(); renderInitiative();
+    showFeedback(`Turno de: ${cur?.name}`,'info');
+    broadcast({ type:'initiative_update', initiativeOrder, currentTurnIndex });
+});
+
+clearInitiativeBtn.addEventListener('click', () => {
+    initiativeOrder=[]; currentTurnIndex=0; saveStateToStorage(); renderInitiative();
+    showFeedback('Iniciativa limpa.','success');
+    broadcast({ type:'initiative_update', initiativeOrder:[], currentTurnIndex:0 });
+});
+
+// ============================================================
+//   MAP SETTINGS
+// ============================================================
+mapSettingsBtn.addEventListener('click', () => {
+    mapNameInput.value = mapSettings.name;
+    unitInput.value = mapSettings.unit;
+    gridColsInput.value = mapSettings.gridCols;
+    gridRowsInput.value = mapSettings.gridRows;
+    cellSizeInput.value = mapSettings.cellSize || 40;
+    gridColorInput.value = mapSettings.gridColor || '#4b5563';
+    showGridLabelsInput.checked = mapSettings.showGridLabels !== false;
+    if (mapSettings.backgroundImage) {
+        mapBackgroundPreview.src = mapSettings.backgroundImage;
+        mapBackgroundPreviewContainer.classList.remove('hidden');
+    } else {
+        mapBackgroundPreviewContainer.classList.add('hidden');
+    }
+    mapSettingsModal.classList.remove('hidden');
+});
+
+uploadMapBackgroundBtn.addEventListener('click', () => mapBackgroundInput.click());
+mapBackgroundInput.addEventListener('change', e => {
+    if (!e.target.files.length) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const base64 = ev.target.result;
+        mapSettings.backgroundImage = base64;
+        mapBackgroundPreview.src = base64;
+        mapBackgroundPreviewContainer.classList.remove('hidden');
+        loadMapBackground().then(() => drawCanvas());
+        // Passo 3: send background as chunks (can be large)
+        broadcastMapBackgroundChunks(base64);
+    };
+    reader.readAsDataURL(e.target.files[0]);
+    e.target.value='';
+});
+
+removeMapBackgroundBtn.addEventListener('click', () => {
+    mapSettings.backgroundImage=''; mapBackgroundImgObj=null;
+    mapBackgroundPreview.src=''; mapBackgroundPreviewContainer.classList.add('hidden');
+    drawCanvas();
+    broadcast({ type:'map_background_clear' });
+});
+
+saveMapSettingsBtn.addEventListener('click', () => {
+    mapSettings.name = mapNameInput.value || 'Mapa';
+    mapSettings.unit = unitInput.value || 'quadrados';
+    mapSettings.gridCols = Math.max(5, Math.min(100, parseInt(gridColsInput.value)||20));
+    mapSettings.gridRows = Math.max(5, Math.min(100, parseInt(gridRowsInput.value)||15));
+    mapSettings.cellSize = Math.max(20, Math.min(120, parseInt(cellSizeInput.value)||40));
+    mapSettings.gridColor = gridColorInput.value;
+    mapSettings.showGridLabels = showGridLabelsInput.checked;
+    mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+    saveStateToStorage();
+    mapSettingsModal.classList.add('hidden');
+    resizeCanvasAndDraw();
+    showFeedback('Configurações salvas!','success');
+    // Passo 3: broadcast settings (no image — that travels separately)
+    const { backgroundImage: _bg, ...settingsWithoutBg } = mapSettings;
+    broadcast({ type:'map_settings_update', mapSettings: settingsWithoutBg });
+});
+cancelMapSettingsBtn.addEventListener('click', () => mapSettingsModal.classList.add('hidden'));
+
+// ============================================================
+//   SAVE/LOAD MAP FILE
+// ============================================================
+saveMapFileBtn.addEventListener('click', () => {
+    autoSaveCurrentNpc();
+    const data = { version:2, mapSettings, npcs, tokens:tokens.map(t=>({...t,imageObj:null})), drawings, initiativeOrder, currentTurnIndex };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const a = D.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${mapSettings.name.replace(/\s+/g,'_')}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    showFeedback('Mapa salvo!','success');
+});
+
+loadMapFileBtn.addEventListener('click', () => loadMapInput.click());
+loadMapInput.addEventListener('change', loadMapFromFile);
+mainLoadMapInput.addEventListener('change', loadMapFromFile);
+
+async function loadMapFromFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = async ev => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...(data.mapSettings||{}) };
+            npcs = data.npcs || {};
+            drawings = data.drawings || [];
+            initiativeOrder = data.initiativeOrder || [];
+            currentTurnIndex = data.currentTurnIndex || 0;
+            tokens = (data.tokens||[]).map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
+            saveStateToStorage();
+            await showMapApplication(false);
+            showFeedback('Mapa carregado!','success');
+        } catch(err) {
+            console.error(err);
+            showFeedback('Erro ao carregar o arquivo.','error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ============================================================
+//   CONFIRM MODAL LISTENERS
+// ============================================================
+customConfirmYes.addEventListener('click', () => { if (confirmCallback) confirmCallback(true); hideCustomConfirm(); });
+customConfirmNo.addEventListener('click', () => { if (confirmCallback) confirmCallback(false); hideCustomConfirm(); });
+
+backToMainBtn.addEventListener('click', () => {
+    showCustomConfirm('Voltar para a tela principal?', confirmed => {
+        if (confirmed) showMainScreen();
+        hideCustomConfirm();
+    }, 'Alterações não salvas em arquivo serão perdidas.');
+});
+
+createNewMapBtn.addEventListener('click', () => showMapApplication(true));
+loadExistingMapBtn.addEventListener('click', () => mainLoadMapInput.click());
+
+// ============================================================
+//   P2P STATE — Native WebRTC, manual SDP exchange
+//   Why: PeerJS relies on WebSocket to an external broker.
+//   Mobile browsers block that WebSocket from file:// origins.
+//   Native RTCPeerConnection + copy-paste SDP needs NO broker,
+//   NO external server, works from file:// on any device.
+// ============================================================
+let dataChannels  = [];       // RTCDataChannel[]  — one per connected peer
+let peerConns     = [];       // RTCPeerConnection[] — host keeps N, client keeps 1
+let _hostPc       = null;     // host's pending RTCPeerConnection (before answer)
+let isHost        = false;
+let myRole        = null;     // 'host' | 'client' | null
+let _suppressBroadcast = false;
+
+// Image chunk reassembly buffer: imageId → { npcId, chunks[], total, received }
+const imageAssemblyBuffer = {};
+
+// ICE servers: STUN for same-network, TURN for cross-network / NAT
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478'  },
+    // Open Relay Project — free public TURN, works cross-network
+    {
+        urls: [
+            'turn:global.relay.metered.ca:80',
+            'turn:global.relay.metered.ca:443',
+            'turns:global.relay.metered.ca:443'
+        ],
+        username:   'openrelayproject',
+        credential: 'openrelayproject'
+    }
+];
+
+// How long to wait for ICE candidates before giving up
+const ICE_GATHER_TIMEOUT = 6000;
+
+// ── DOM refs for lobby ───────────────────────────────────────
+const lobbyScreen       = $('lobbyScreen');
+const lobbyHostBtn      = $('lobbyHostBtn');
+const lobbyHostEnterBtn = $('lobbyHostEnterBtn');
+const lobbyJoinBtn      = $('lobbyJoinBtn');
+const lobbyBackBtn      = $('lobbyBackBtn');
+const hostStep1         = $('hostStep1');
+const hostStep2         = $('hostStep2');
+const hostOfferDisplay  = $('hostOfferDisplay');
+const copyOfferBtn      = $('copyOfferBtn');
+const hostAnswerInput   = $('hostAnswerInput');
+const applyAnswerBtn    = $('applyAnswerBtn');
+const clientStep1       = $('clientStep1');
+const clientStep2       = $('clientStep2');
+const clientOfferInput  = $('clientOfferInput');
+const clientAnswerDisplay = $('clientAnswerDisplay');
+const copyAnswerBtn     = $('copyAnswerBtn');
+const clientWaitMsg     = $('clientWaitMsg');
+const lobbyStatusEl     = $('lobbyStatus');
+const peerCounterBadge  = $('peerCounterBadge');
+const peerCounterText   = $('peerCounterText');
+const peerRoleText      = $('peerRoleText');
+
+// ============================================================
+//   TRANSPORT LAYER
+// ============================================================
+
+// Send JSON string to ALL open DataChannels.
+function broadcast(payload) {
+    if (_suppressBroadcast || myRole === null) return;
+    const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    dataChannels.forEach(dc => {
+        if (dc.readyState === 'open') {
+            try { dc.send(str); } catch(e) { console.warn('[P2P] send error', e); }
+        }
+    });
+}
+
+// Host only: forward string to every DC except the source.
+function relay(str, sourceDc) {
+    if (!isHost) return;
+    dataChannels.forEach(dc => {
+        if (dc !== sourceDc && dc.readyState === 'open') {
+            try { dc.send(str); } catch(e) {}
+        }
+    });
+}
+
+// Send a payload on a specific DataChannel (used by sendFullStateSync).
+function connSend(dc, payload) {
+    if (!dc || dc.readyState !== 'open') return;
+    const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    try { dc.send(str); } catch(e) { console.warn('[P2P] connSend failed', e); }
+}
+
+// Central message router — called by every DataChannel.onmessage.
+function handleRemoteMessage(raw, sourceDc) {
+    let msg, str;
+    try {
+        if (typeof raw === 'string') {
+            str = raw;
+            msg = JSON.parse(raw);
+        } else {
+            str = JSON.stringify(raw);
+            msg = raw;
+        }
+    } catch(e) { console.warn('[P2P] parse error', e); return; }
+
+    // Host relays canonical string to all other clients first
+    if (isHost && sourceDc) relay(str, sourceDc);
+
+    _suppressBroadcast = true;
+    try {
+        switch (msg.type) {
+
+            case 'full_state_sync': {
+                const { backgroundImage: _bg, ...msClean } = msg.mapSettings || {};
+                mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...msClean };
+                npcs = msg.npcs || {};
+                tokens = (msg.tokens || []).map(t => ({
+                    ...t, imageObj:null, isDragging:false,
+                    widthInGrids: t.widthInGrids||1, heightInGrids: t.heightInGrids||1
+                }));
+                drawings         = msg.drawings        || [];
+                initiativeOrder  = msg.initiativeOrder || [];
+                currentTurnIndex = msg.currentTurnIndex || 0;
+                mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+                reloadTokenImages().then(() => {
+                    resizeCanvasAndDraw();
+                    renderNpcList();
+                    renderInitiative();
+                });
+                break;
+            }
+
+            case 'token_move': {
+                const t = tokens.find(tk => tk.id === msg.tokenId);
+                if (t) { t.x = msg.x; t.y = msg.y; drawCanvas(); }
+                break;
+            }
+
+            case 'token_add': {
+                if (!npcs[msg.npc.id])
+                    npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:'' };
+                if (!tokens.find(t => t.id === msg.token.id))
+                    tokens.push({ ...msg.token, imageObj:null, isDragging:false });
+                saveStateToStorage(); renderNpcList(); drawCanvas();
+                break;
+            }
+
+            case 'token_delete': {
+                tokens = tokens.filter(t => t.id !== msg.tokenId);
+                if (selectedToken?.id === msg.tokenId) selectedToken = null;
+                saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+                break;
+            }
+
+            case 'drawing_add': {
+                drawings.push(msg.drawing);
+                saveStateToStorage(); drawCanvas();
+                break;
+            }
+
+            case 'drawings_sync': {
+                drawings = msg.drawings || [];
+                saveStateToStorage(); drawCanvas();
+                break;
+            }
+
+            case 'hp_update': {
+                if (npcs[msg.npcId]) {
+                    npcs[msg.npcId].hpMax     = msg.hpMax;
+                    npcs[msg.npcId].hpCurrent = msg.hpCurrent;
+                    saveStateToStorage(); renderNpcList(); drawCanvas();
+                }
+                break;
+            }
+
+            case 'npc_update': {
+                if (npcs[msg.npcId]) {
+                    Object.assign(npcs[msg.npcId], msg.patch);
+                    saveStateToStorage(); renderNpcList(); drawCanvas();
+                }
+                break;
+            }
+
+            case 'map_clear': {
+                tokens = []; drawings = []; selectedToken = null;
+                saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+                showFeedback('Mestre limpou o mapa.', 'info');
+                break;
+            }
+
+            case 'map_settings_update': {
+                const { backgroundImage: _b, ...inc } = msg.mapSettings || {};
+                mapSettings = { ...mapSettings, ...inc };
+                mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+                saveStateToStorage(); resizeCanvasAndDraw();
+                showFeedback('Configurações do mapa atualizadas.', 'info');
+                break;
+            }
+
+            case 'map_background_clear': {
+                mapSettings.backgroundImage = '';
+                mapBackgroundImgObj = null;
+                saveStateToStorage(); drawCanvas();
+                showFeedback('Mestre removeu o fundo do mapa.', 'info');
+                break;
+            }
+
+            case 'initiative_update': {
+                initiativeOrder  = msg.initiativeOrder  || [];
+                currentTurnIndex = msg.currentTurnIndex || 0;
+                saveStateToStorage(); renderInitiative();
+                break;
+            }
+
+            case 'image_chunk': {
+                const { imageId, npcId, chunkIndex, totalChunks, data } = msg;
+                if (!imageAssemblyBuffer[imageId])
+                    imageAssemblyBuffer[imageId] = { npcId, chunks: new Array(totalChunks), total: totalChunks, received: 0 };
+                const buf = imageAssemblyBuffer[imageId];
+                if (buf.chunks[chunkIndex] === undefined) {
+                    buf.chunks[chunkIndex] = data;
+                    buf.received++;
+                    if (buf.received === buf.total) {
+                        const base64 = buf.chunks.join('');
+                        delete imageAssemblyBuffer[imageId];
+                        if (npcId === '__bg__') {
+                            mapSettings.backgroundImage = base64;
+                            saveStateToStorage();
+                            loadMapBackground().then(() => {
+                                drawCanvas();
+                                showFeedback('Fundo do mapa recebido!', 'success');
+                            });
+                        } else if (npcs[npcId]) {
+                            npcs[npcId].tokenImageBase64 = base64;
+                            saveStateToStorage();
+                            tokens.filter(t => t.npcId === npcId).forEach(t => {
+                                const img = new Image();
+                                img.onload = () => { t.imageObj = img; drawCanvas(); };
+                                img.src = base64;
+                            });
+                            renderNpcList();
+                        }
+                    }
+                }
+                break;
+            }
+
+            default:
+                console.warn('[P2P] unknown type:', msg.type);
+        }
+    } finally {
+        _suppressBroadcast = false;
+    }
+}
+
+// ============================================================
+//   IMAGE CHUNKING
+// ============================================================
+const CHUNK_SIZE = 12000;
+
+function broadcastImageChunks(npcId, base64String) {
+    if (!base64String || myRole === null || dataChannels.length === 0) return;
+    const imageId     = `live_${npcId}_${Date.now()}`;
+    const totalChunks = Math.ceil(base64String.length / CHUNK_SIZE);
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = base64String.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        setTimeout(() => {
+            broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk });
+        }, i * 10);
+    }
+}
+
+function broadcastMapBackgroundChunks(base64String) {
+    if (!base64String || myRole === null || dataChannels.length === 0) return;
+    const npcId       = '__bg__';
+    const imageId     = `bg_${Date.now()}`;
+    const totalChunks = Math.ceil(base64String.length / CHUNK_SIZE);
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = base64String.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        setTimeout(() => {
+            broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk });
+        }, i * 10);
+    }
+}
+
+// ============================================================
+//   FULL STATE SYNC  (host → new client on channel open)
+// ============================================================
+function sendFullStateSync(dc) {
+    // Strip images from the main payload — they travel as chunks
+    const { backgroundImage: _bg, ...msClean } = mapSettings;
+    const npcsClean = {};
+    Object.keys(npcs).forEach(id => {
+        const { tokenImageBase64: _img, ...rest } = npcs[id];
+        npcsClean[id] = rest;
+    });
+
+    connSend(dc, {
+        type: 'full_state_sync',
+        mapSettings:    msClean,
+        npcs:           npcsClean,
+        tokens:         tokens.map(t => ({...t, imageObj:null})),
+        drawings,
+        initiativeOrder,
+        currentTurnIndex
+    });
+
+    // Schedule image chunks after the state is applied client-side
+    const sessionId = Date.now();
+    let delay = 500; // generous head-start for full_state_sync to land
+
+    Object.keys(npcs).forEach(npcId => {
+        const base64 = npcs[npcId].tokenImageBase64;
+        if (!base64) return;
+        const total   = Math.ceil(base64.length / CHUNK_SIZE);
+        const imageId = `sync_${sessionId}_${npcId}`;
+        for (let i = 0; i < total; i++) {
+            const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            setTimeout(() => connSend(dc, { type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            delay += 12;
+        }
+        delay += 100;
+    });
+
+    if (mapSettings.backgroundImage) {
+        const base64  = mapSettings.backgroundImage;
+        const total   = Math.ceil(base64.length / CHUNK_SIZE);
+        const imageId = `sync_${sessionId}___bg__`;
+        for (let i = 0; i < total; i++) {
+            const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            setTimeout(() => connSend(dc, { type:'image_chunk', imageId, npcId:'__bg__', chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            delay += 12;
+        }
+    }
+}
+
+// ============================================================
+//   SDP ENCODE / DECODE  (compact base64 for copy-paste / QR)
+// ============================================================
+function encodeSession(data) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+function decodeSession(code) {
+    return JSON.parse(decodeURIComponent(escape(atob(code.trim().replace(/\s/g,'')))));
+}
+
+// Wait for ICE gathering to finish (or timeout)
+function waitForICE(pc) {
+    return new Promise(resolve => {
+        if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        const done = () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); resolve(); } };
+        const t = setTimeout(resolve, ICE_GATHER_TIMEOUT);
+        pc.addEventListener('icegatheringstatechange', done);
+    });
+}
+
+// ============================================================
+//   DataChannel SETUP  (called for both host and client channels)
+// ============================================================
+function setupDataChannel(dc) {
+    dc.addEventListener('open', () => {
+        dataChannels.push(dc);
+        updatePeerBadge();
+
+        if (isHost) {
+            showFeedback(`🟢 Jogador conectado! (${dataChannels.filter(d=>d.readyState==='open').length} online)`, 'success');
+            if (!lobbyScreen.classList.contains('hidden')) {
+                setLobbyStatus(`✅ Jogador conectado! Entre no mapa quando quiser.`, 'connected');
+            }
+            sendFullStateSync(dc);
+        } else {
+            // Client: DataChannel opened → we're fully connected
+            // The full_state_sync will arrive shortly and trigger map display
+        }
+    });
+
+    dc.addEventListener('message', (e) => {
+        const wasInLobby = !lobbyScreen.classList.contains('hidden');
+        let msgType = null;
+        try { msgType = JSON.parse(e.data).type; } catch(_) {}
+
+        handleRemoteMessage(e.data, isHost ? dc : null);
+
+        // Client: after receiving full_state_sync, exit lobby and show map
+        if (!isHost && wasInLobby && msgType === 'full_state_sync') {
+            setTimeout(() => {
+                hideLobbyScreen();
+                mapApplication.classList.remove('hidden');
+                mainScreen.classList.add('hidden');
+                resizeCanvasAndDraw();
+                updateToggleButtonPositions();
+                updateToolButtonsState();
+                updateTokenControlsState();
+                showFeedback('🟢 Conectado! Mapa sincronizado.', 'success');
+            }, 300);
+        }
+    });
+
+    dc.addEventListener('close', () => {
+        dataChannels = dataChannels.filter(d => d !== dc);
+        updatePeerBadge();
+        showFeedback('🔴 Um jogador desconectou.', 'info');
+    });
+
+    dc.addEventListener('error', e => {
+        console.error('[WebRTC] DataChannel error', e);
+        dataChannels = dataChannels.filter(d => d !== dc);
+        updatePeerBadge();
+    });
+}
+
+// ============================================================
+//   HOST FLOW
+// ============================================================
+async function initAsHost() {
+    destroyPeer();
+    isHost  = true;
+    myRole  = 'host';
+
+    lobbyHostBtn.disabled = true;
+    setLobbyStatus('⏳ Gerando código de sessão… (pode levar alguns segundos)', 'waiting');
+
+    try {
+        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        _hostPc = pc;
+        peerConns.push(pc);
+
+        // Create the data channel before the offer
+        const dc = pc.createDataChannel('escudo', { ordered: true });
+        setupDataChannel(dc);
+
+        pc.addEventListener('connectionstatechange', () => {
+            if (pc.connectionState === 'failed')
+                showFeedback('❌ Conexão WebRTC falhou. Tente gerar um novo código.', 'error');
+        });
+
+        // Create offer and wait for ALL ICE candidates
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await waitForICE(pc);
+
+        // Encode the complete local description (includes ICE in SDP)
+        const offerCode = encodeSession({
+            type: pc.localDescription.type,
+            sdp:  pc.localDescription.sdp
+        });
+
+        hostOfferDisplay.value = offerCode;
+        hostStep1.classList.add('hidden');
+        hostStep2.classList.remove('hidden');
+        setLobbyStatus('✅ Código gerado! Siga os passos acima.', 'connected');
+
+    } catch(e) {
+        console.error('[WebRTC] initAsHost error:', e);
+        setLobbyStatus(`❌ Erro: ${e.message}`, 'error');
+        lobbyHostBtn.disabled = false;
+        myRole = null; isHost = false;
+    }
+}
+
+// Host applies the client's answer code
+async function applyClientAnswer() {
+    const raw = hostAnswerInput.value.trim();
+    if (!raw) {
+        setLobbyStatus('❌ Cole a resposta do jogador antes de conectar.', 'error');
+        return;
+    }
+    applyAnswerBtn.disabled = true;
+    setLobbyStatus('⏳ Conectando…', 'waiting');
+    try {
+        const { type, sdp } = decodeSession(raw);
+        await _hostPc.setRemoteDescription(new RTCSessionDescription({ type, sdp }));
+        setLobbyStatus('✅ Conexão estabelecida! Aguardando sincronização…', 'connected');
+        // DataChannel 'open' event will fire shortly and call sendFullStateSync
+    } catch(e) {
+        console.error('[WebRTC] applyClientAnswer error:', e);
+        setLobbyStatus(`❌ Código inválido ou erro: ${e.message}`, 'error');
+        applyAnswerBtn.disabled = false;
+    }
+}
+
+// ============================================================
+//   CLIENT FLOW
+// ============================================================
+async function initAsClient() {
+    const raw = clientOfferInput.value.trim();
+    if (!raw) {
+        setLobbyStatus('❌ Cole o código do Mestre antes de continuar.', 'error');
+        return;
+    }
+
+    destroyPeer();
+    isHost = false;
+    myRole = 'client';
+
+    lobbyJoinBtn.disabled = true;
+    setLobbyStatus('⏳ Processando código e gerando resposta…', 'waiting');
+
+    try {
+        const { type, sdp } = decodeSession(raw);
+
+        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        peerConns.push(pc);
+
+        // Client receives the DataChannel created by host
+        pc.addEventListener('datachannel', e => {
+            setupDataChannel(e.channel);
+        });
+
+        pc.addEventListener('connectionstatechange', () => {
+            if (pc.connectionState === 'failed')
+                showFeedback('❌ Conexão WebRTC falhou.', 'error');
+        });
+
+        await pc.setRemoteDescription(new RTCSessionDescription({ type, sdp }));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await waitForICE(pc);
+
+        const answerCode = encodeSession({
+            type: pc.localDescription.type,
+            sdp:  pc.localDescription.sdp
+        });
+
+        clientAnswerDisplay.value = answerCode;
+        clientStep1.classList.add('hidden');
+        clientStep2.classList.remove('hidden');
+        setLobbyStatus('✅ Resposta gerada! Envie-a ao Mestre.', 'connected');
+
+    } catch(e) {
+        console.error('[WebRTC] initAsClient error:', e);
+        setLobbyStatus(`❌ Código inválido ou erro: ${e.message}`, 'error');
+        lobbyJoinBtn.disabled = false;
+        myRole = null;
+    }
+}
+
+// ============================================================
+//   LOBBY HELPERS
+// ============================================================
+function showLobbyScreen() {
+    mainScreen.classList.add('hidden');
+    lobbyScreen.classList.remove('hidden');
+    mapApplication.classList.add('hidden');
+    resetLobbyUI();
+}
+
+function hideLobbyScreen() {
+    lobbyScreen.classList.add('hidden');
+}
+
+function resetLobbyUI() {
+    setLobbyStatus('', '');
+    // Reset host steps
+    hostStep1.classList.remove('hidden');
+    hostStep2.classList.add('hidden');
+    hostOfferDisplay.value  = '';
+    hostAnswerInput.value   = '';
+    applyAnswerBtn.disabled = false;
+    lobbyHostBtn.disabled   = false;
+    // Reset client steps
+    clientStep1.classList.remove('hidden');
+    clientStep2.classList.add('hidden');
+    clientOfferInput.value     = '';
+    clientAnswerDisplay.value  = '';
+    lobbyJoinBtn.disabled      = false;
+}
+
+function setLobbyStatus(message, type) {
+    lobbyStatusEl.textContent = message;
+    lobbyStatusEl.className   = type ? `status-${type}` : '';
+    lobbyStatusEl.id          = 'lobbyStatus';
+}
+
+function updatePeerBadge() {
+    if (myRole === null) { peerCounterBadge.classList.remove('visible'); return; }
+    peerCounterBadge.classList.add('visible');
+    const n = dataChannels.filter(d => d.readyState === 'open').length + 1;
+    peerCounterText.textContent = `${n} jogador${n !== 1 ? 'es' : ''}`;
+    peerRoleText.textContent    = isHost ? 'Mestre' : 'Jogador';
+}
+
+function destroyPeer() {
+    dataChannels.forEach(dc => { try { dc.close(); } catch(e) {} });
+    dataChannels = [];
+    peerConns.forEach(pc => { try { pc.close(); } catch(e) {} });
+    peerConns = [];
+    if (_hostPc && !peerConns.includes(_hostPc)) {
+        try { _hostPc.close(); } catch(e) {}
+    }
+    _hostPc = null;
+}
+
+// Clipboard helper (works on file:// too)
+function copyFallback(text) {
+    const ta = D.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    D.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { D.execCommand('copy'); showFeedback('Código copiado!', 'success'); }
+    catch(e) { showFeedback('Selecione e copie manualmente.', 'info'); }
+    D.body.removeChild(ta);
+}
+
+function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(()  => showFeedback('Código copiado!', 'success'))
+            .catch(()  => copyFallback(text));
+    } else {
+        copyFallback(text);
+    }
+}
+
+// ============================================================
+//   LOBBY BUTTON LISTENERS
+// ============================================================
+lobbyHostBtn.addEventListener('click', () => initAsHost());
+
+applyAnswerBtn.addEventListener('click', () => applyClientAnswer());
+
+lobbyHostEnterBtn.addEventListener('click', () => {
+    hideLobbyScreen();
+    const hasSaved = localStorage.getItem('mapSettings') || localStorage.getItem('npcs');
+    showMapApplication(!hasSaved);
+    updatePeerBadge();
+});
+
+lobbyJoinBtn.addEventListener('click', () => initAsClient());
+
+copyOfferBtn.addEventListener('click', () => copyText(hostOfferDisplay.value));
+
+copyAnswerBtn.addEventListener('click', () => copyText(clientAnswerDisplay.value));
+
+lobbyBackBtn.addEventListener('click', () => {
+    destroyPeer();
+    myRole = null; isHost = false;
+    hideLobbyScreen();
+    showMainScreen();
+    updatePeerBadge();
+});
+
+// ============================================================
+//   INIT
+// ============================================================
+window.addEventListener('resize', () => {
+    if (!mapApplication.classList.contains('hidden')) {
+        resizeCanvasAndDraw();
+        updateToggleButtonPositions();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Wire the multiplayer button (now in HTML, safe to query here)
+    const multiplayerBtn = $('multiplayerBtn');
+    if (multiplayerBtn) {
+        multiplayerBtn.addEventListener('click', () => {
+            mainScreen.classList.add('hidden');
+            showLobbyScreen();
+        });
+    }
+
+    // Original single-player boot logic
+    const hasSaved = localStorage.getItem('mapSettings') || localStorage.getItem('npcs');
+    if (hasSaved) showMapApplication(false);
+    else showMainScreen();
+    setTool('move');
+});
+
+console.log('Escudo do Mestre v2 + PeerJS Passo 1 loaded ✓');
+</script>
+</body>
+</html>
