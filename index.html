@@ -521,41 +521,6 @@
         }
         #lobbyScreen.hidden { display: none; }
 
-        /* SDP code text areas — monospace, scrollable, compact */
-        .code-textarea {
-            width: 100%;
-            background: var(--bg-darkest);
-            border: 1px solid var(--border-light);
-            border-radius: 0.5rem;
-            color: var(--accent);
-            font-family: monospace;
-            font-size: 0.7rem;
-            padding: 0.5rem;
-            resize: none;
-            word-break: break-all;
-            display: block;
-        }
-        .code-textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-        /* Hide lobby step divs by default */
-        .lobby-step { display: block; }
-        .lobby-step.hidden { display: none; }
-        /* Answer-waiting spinner */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner {
-            width: 1rem; height: 1rem;
-            border: 2px solid var(--border-light);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 0.4rem;
-        }
-
         .lobby-card {
             background-color: rgba(31, 41, 55, 0.92);
             padding: 2.5rem;
@@ -2392,7 +2357,6 @@ createNewMapBtn.addEventListener('click', () => showMapApplication(true));
 loadExistingMapBtn.addEventListener('click', () => mainLoadMapInput.click());
 
 // ============================================================
-// ============================================================
 //   P2P STATE (PeerJS)
 // ============================================================
 let peer        = null;
@@ -2421,40 +2385,48 @@ const peerRoleText      = $('peerRoleText');
 
 // ============================================================
 //   TRANSPORT
+//   Objects are passed directly to conn.send().
+//   PeerJS default serialization ('json') handles object→JSON→object
+//   automatically — no manual JSON.stringify needed.
 // ============================================================
-function broadcast(payload) {
+
+function broadcast(obj) {
     if (_suppressBroadcast || myRole === null) return;
-    const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
     connections.forEach(conn => {
         if (conn && conn.open) {
-            try { conn.send(str); } catch(e) { console.warn('[P2P] send error', e); }
+            try { conn.send(obj); } catch(e) { console.warn('[P2P] send error', e); }
         }
     });
 }
 
-function relay(str, sourceConn) {
+// Host only: forward the already-parsed message object to all other clients.
+function relay(obj, sourceConn) {
     if (!isHost) return;
     connections.forEach(conn => {
         if (conn !== sourceConn && conn && conn.open) {
-            try { conn.send(str); } catch(e) {}
+            try { conn.send(obj); } catch(e) {}
         }
     });
 }
 
-function connSend(conn, payload) {
+// Send to a single specific connection.
+function connSend(conn, obj) {
     if (!conn || !conn.open) return;
-    const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    try { conn.send(str); } catch(e) { console.warn('[P2P] connSend failed', e); }
+    try { conn.send(obj); } catch(e) { console.warn('[P2P] connSend failed', e); }
 }
 
+// Central message router.
+// PeerJS default serialization delivers already-parsed objects to .on('data').
 function handleRemoteMessage(raw, sourceConn) {
-    let msg, str;
+    // raw is already a parsed object from PeerJS json serialization,
+    // but guard against the rare case it arrives as a string.
+    let msg;
     try {
-        if (typeof raw === 'string') { str = raw; msg = JSON.parse(raw); }
-        else { str = JSON.stringify(raw); msg = raw; }
+        msg = (typeof raw === 'string') ? JSON.parse(raw) : raw;
     } catch(e) { console.warn('[P2P] parse error', e); return; }
 
-    if (isHost && sourceConn) relay(str, sourceConn);
+    // Host relays parsed object to all other clients.
+    if (isHost && sourceConn) relay(msg, sourceConn);
 
     _suppressBroadcast = true;
     try {
@@ -2485,7 +2457,7 @@ function handleRemoteMessage(raw, sourceConn) {
             }
 
             case 'token_add': {
-                if (!npcs[msg.npc.id]) npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:''};
+                if (!npcs[msg.npc.id]) npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:'' };
                 if (!tokens.find(t => t.id === msg.token.id))
                     tokens.push({ ...msg.token, imageObj:null, isDragging:false });
                 saveStateToStorage(); renderNpcList(); drawCanvas();
@@ -2624,7 +2596,7 @@ function broadcastMapBackgroundChunks(base64String) {
 }
 
 // ============================================================
-//   FULL STATE SYNC (host → new client)
+//   FULL STATE SYNC (host → new client on connection open)
 // ============================================================
 function sendFullStateSync(conn) {
     const { backgroundImage:_bg, ...msClean } = mapSettings;
@@ -2710,16 +2682,16 @@ function initAsHost() {
     myRole = 'host';
 
     lobbyHostBtn.disabled = true;
-    setLobbyStatus('⏳ Inicializando conexão P2P…', 'waiting');
+    setLobbyStatus('⏳ Inicializando…', 'waiting');
 
     peer = new Peer(undefined, makePeerConfig());
 
     const openTimeout = setTimeout(() => {
-        if (!peer || peer.disconnected) {
-            setLobbyStatus('❌ Timeout: servidor de sinalização não respondeu. Verifique sua conexão.', 'error');
-            lobbyHostBtn.disabled = false;
+        if (!peer || peer.disconnected || !peer.open) {
+            setLobbyStatus('❌ Timeout: servidor não respondeu. Verifique sua internet.', 'error');
+            _showRetry('host');
         }
-    }, 15000);
+    }, 12000);
 
     peer.on('open', id => {
         clearTimeout(openTimeout);
@@ -2734,20 +2706,19 @@ function initAsHost() {
         clearTimeout(openTimeout);
         console.error('[PeerJS Host]', err.type, err);
         const msgs = {
-            'network':       'Sem acesso à internet ou broker bloqueado.',
-            'server-error':  'Erro no servidor de sinalização. Tente novamente.',
-            'socket-error':  'Falha no WebSocket.',
-            'socket-closed': 'Conexão com o broker encerrada inesperadamente.',
-            'unavailable-id':'ID já em uso. Tente criar novamente.'
+            'network':        'Sem acesso à internet ou servidor bloqueado.',
+            'server-error':   'Erro no servidor de sinalização. Tente novamente.',
+            'socket-error':   'Falha no WebSocket. Certifique-se de usar HTTPS.',
+            'socket-closed':  'Conexão com servidor encerrada. Tente novamente.',
+            'unavailable-id': 'ID em uso. Tente criar novamente.'
         };
-        setLobbyStatus(`❌ ${msgs[err.type] || 'Erro: ' + err.type}`, 'error');
-        lobbyHostBtn.disabled = false;
-        myRole = null; isHost = false;
+        setLobbyStatus(`❌ ${msgs[err.type] || ('Erro: ' + err.type)}`, 'error');
+        _showRetry('host');
     });
 
     peer.on('disconnected', () => {
         if (peer && !peer.destroyed) {
-            setLobbyStatus('⚠️ Broker desconectou. Reconectando…', 'waiting');
+            setLobbyStatus('⚠️ Desconectado. Reconectando…', 'waiting');
             try { peer.reconnect(); } catch(e) {}
         }
     });
@@ -2759,12 +2730,12 @@ function setupHostConnection(conn) {
         updatePeerBadge();
         showFeedback(`🟢 Jogador conectado! (${connections.filter(c=>c.open).length} online)`, 'success');
         if (!lobbyScreen.classList.contains('hidden')) {
-            setLobbyStatus(`✅ ${connections.filter(c=>c.open).length} jogador(es) conectado(s). Entre no mapa quando quiser.`, 'connected');
+            setLobbyStatus(`✅ ${connections.filter(c=>c.open).length} jogador(es) conectado(s).`, 'connected');
         }
         sendFullStateSync(conn);
     });
-    conn.on('data', raw => handleRemoteMessage(raw, conn));
-    conn.on('close', () => {
+    conn.on('data',  raw => handleRemoteMessage(raw, conn));
+    conn.on('close', ()  => {
         connections = connections.filter(c => c !== conn);
         updatePeerBadge();
         showFeedback('🔴 Um jogador desconectou.', 'info');
@@ -2785,34 +2756,48 @@ function initAsClient(hostId) {
     myRole = 'client';
 
     lobbyJoinBtn.disabled = true;
-    setLobbyStatus('⏳ Conectando ao servidor de sinalização…', 'waiting');
+    setLobbyStatus('⏳ Conectando ao servidor…', 'waiting');
 
     peer = new Peer(undefined, makePeerConfig());
 
-    const openTimeout = setTimeout(() => {
-        setLobbyStatus('❌ Timeout. Verifique sua internet e o código.', 'error');
-        lobbyJoinBtn.disabled = false;
+    // Timeout for broker registration
+    const brokerTimeout = setTimeout(() => {
+        setLobbyStatus('❌ Timeout ao conectar ao servidor. Verifique sua internet.', 'error');
+        _showRetry('client');
         myRole = null;
-    }, 15000);
+    }, 12000);
 
     peer.on('open', () => {
-        clearTimeout(openTimeout);
+        clearTimeout(brokerTimeout);
         setLobbyStatus('⏳ Encontrando o Mestre…', 'waiting');
+
         const conn = peer.connect(hostId.trim(), { reliable: true });
         setupClientConnection(conn);
+
+        // Timeout for DataConnection opening (peer-unavailable shows as timeout here)
+        const connTimeout = setTimeout(() => {
+            if (!connections.length) {
+                setLobbyStatus('❌ Mestre não encontrado. Verifique o código e tente novamente.', 'error');
+                _showRetry('client');
+                myRole = null;
+            }
+        }, 12000);
+
+        // Clear DataConnection timeout when connection opens
+        conn.on('open', () => clearTimeout(connTimeout));
     });
 
     peer.on('error', err => {
-        clearTimeout(openTimeout);
+        clearTimeout(brokerTimeout);
         console.error('[PeerJS Client]', err.type, err);
         const msgs = {
             'peer-unavailable': 'Mestre não encontrado. Verifique o código.',
             'network':          'Sem acesso à internet.',
             'server-error':     'Erro no servidor de sinalização.',
-            'socket-error':     'Falha no WebSocket.'
+            'socket-error':     'Falha no WebSocket. Certifique-se de usar HTTPS.'
         };
-        setLobbyStatus(`❌ ${msgs[err.type] || 'Erro: ' + err.type}`, 'error');
-        lobbyJoinBtn.disabled = false;
+        setLobbyStatus(`❌ ${msgs[err.type] || ('Erro: ' + err.type)}`, 'error');
+        _showRetry('client');
         myRole = null;
     });
 }
@@ -2825,10 +2810,12 @@ function setupClientConnection(conn) {
     });
 
     conn.on('data', raw => {
-        let msgType = null;
-        try { msgType = (typeof raw === 'object' && raw !== null) ? raw.type : JSON.parse(raw).type; } catch(e) {}
+        // Detect if this is full_state_sync before applying, to trigger screen transition
+        const msgType = (typeof raw === 'object' && raw !== null) ? raw.type : null;
         const wasInLobby = !lobbyScreen.classList.contains('hidden');
+
         handleRemoteMessage(raw, null);
+
         if (wasInLobby && msgType === 'full_state_sync') {
             setTimeout(() => {
                 hideLobbyScreen();
@@ -2838,7 +2825,7 @@ function setupClientConnection(conn) {
                 updateToggleButtonPositions();
                 updateToolButtonsState();
                 updateTokenControlsState();
-                showFeedback('🟢 Mapa carregado! Bem-vindo à sessão.', 'success');
+                showFeedback('🟢 Sessão sincronizada! Bem-vindo.', 'success');
             }, 300);
         }
     });
@@ -2876,12 +2863,33 @@ function resetLobbyUI() {
     joinIdInput.value = '';
     lobbyHostBtn.disabled = false;
     lobbyJoinBtn.disabled = false;
+    // Remove any retry button that was injected
+    const retryBtn = $('lobbyRetryBtn');
+    if (retryBtn) retryBtn.remove();
 }
 
 function setLobbyStatus(message, type) {
     lobbyStatusEl.textContent = message;
     lobbyStatusEl.className   = type ? `status-${type}` : '';
-    lobbyStatusEl.id          = 'lobbyStatus';
+}
+
+// Inject a "Tentar Novamente" button into the lobby status area on error.
+function _showRetry(role) {
+    lobbyHostBtn.disabled  = false;
+    lobbyJoinBtn.disabled  = false;
+    const existing = $('lobbyRetryBtn');
+    if (existing) existing.remove();
+    const btn = D.createElement('button');
+    btn.id        = 'lobbyRetryBtn';
+    btn.className = 'btn btn-ghost';
+    btn.style.cssText = 'width:100%;justify-content:center;margin-top:0.5rem;';
+    btn.textContent = '🔄 Tentar Novamente';
+    btn.addEventListener('click', () => {
+        resetLobbyUI();
+        if (role === 'host') initAsHost();
+        else if (joinIdInput.value.trim()) initAsClient(joinIdInput.value.trim());
+    });
+    lobbyStatusEl.after(btn);
 }
 
 function updatePeerBadge() {
@@ -2933,7 +2941,9 @@ copyHostIdBtn.addEventListener('click', () => {
     const id = hostIdDisplay.textContent;
     if (!id || id === '—') return;
     if (navigator.clipboard && navigator.clipboard.writeText)
-        navigator.clipboard.writeText(id).then(() => showFeedback('Código copiado!', 'success')).catch(() => copyFallback(id));
+        navigator.clipboard.writeText(id)
+            .then(() => showFeedback('Código copiado!', 'success'))
+            .catch(() => copyFallback(id));
     else copyFallback(id);
 });
 
@@ -2943,6 +2953,7 @@ lobbyBackBtn.addEventListener('click', () => {
     hideLobbyScreen(); showMainScreen(); updatePeerBadge();
 });
 
+// ============================================================
 //   INIT
 // ============================================================
 window.addEventListener('resize', () => {
