@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escudo do Mestre - FORJA RPG</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -726,90 +727,47 @@
 <div id="lobbyScreen" class="hidden">
     <div class="lobby-card">
         <h2 class="title-font">🌐 Sessão Multijogador</h2>
-        <p class="lobby-subtitle">Conexão direta — funciona em qualquer rede, sem servidor</p>
+        <p class="lobby-subtitle">Jogue com seus amigos em tempo real via P2P</p>
 
-        <!-- ── HOST SECTION ─────────────────────────────────── -->
+        <!-- HOST SECTION -->
         <div class="lobby-section">
             <h3>🎲 Criar sessão (Mestre)</h3>
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.875rem;">
+                Você controla o mapa. Compartilhe o código com os jogadores.
+            </p>
+            <button id="lobbyHostBtn" class="btn" style="width:100%;justify-content:center;">Criar Sessão como Mestre</button>
 
-            <!-- Step H1: initial button -->
-            <div id="hostStep1" class="lobby-step">
-                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.875rem;">
-                    Gera um código único para compartilhar com o jogador.
-                </p>
-                <button id="lobbyHostBtn" class="btn" style="width:100%;justify-content:center;">
-                    Criar Sessão como Mestre
-                </button>
-            </div>
-
-            <!-- Step H2: show offer code + paste answer (hidden initially) -->
-            <div id="hostStep2" class="lobby-step hidden">
+            <div id="hostIdContainer" class="hidden" style="margin-top:0.875rem;">
                 <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
-                    <strong style="color:var(--text-primary);">Passo 1 —</strong>
-                    Copie e envie ao jogador (WhatsApp, Telegram, etc):
+                    Código da sessão — compartilhe com os jogadores:
                 </p>
-                <textarea id="hostOfferDisplay" class="code-textarea" rows="4" readonly></textarea>
-                <button id="copyOfferBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.4rem;">
-                    📋 Copiar código
-                </button>
-
-                <div style="margin:0.875rem 0;border-top:1px solid var(--border);"></div>
-
-                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
-                    <strong style="color:var(--text-primary);">Passo 2 —</strong>
-                    Cole aqui a resposta que o jogador enviar de volta:
-                </p>
-                <textarea id="hostAnswerInput" class="code-textarea" rows="4"
-                    placeholder="Cole aqui o código de resposta do jogador…"></textarea>
-                <button id="applyAnswerBtn" class="btn btn-success" style="width:100%;justify-content:center;margin-top:0.4rem;">
-                    ✓ Conectar
-                </button>
-
-                <div style="margin:0.875rem 0;border-top:1px solid var(--border);"></div>
-
-                <button id="lobbyHostEnterBtn" class="btn" style="width:100%;justify-content:center;">
-                    ▶ Entrar no Mapa (sem esperar)
+                <div class="session-id-box">
+                    <span id="hostIdDisplay">—</span>
+                    <button id="copyHostIdBtn" class="btn btn-ghost btn-sm">📋</button>
+                </div>
+                <button id="lobbyHostEnterBtn" class="btn btn-success" style="width:100%;justify-content:center;">
+                    ✓ Entrar no Mapa como Mestre
                 </button>
             </div>
         </div>
 
         <div class="lobby-or-divider">ou</div>
 
-        <!-- ── CLIENT SECTION ──────────────────────────────── -->
+        <!-- CLIENT SECTION -->
         <div class="lobby-section">
             <h3>🧑‍🤝‍🧑 Entrar numa sessão (Jogador)</h3>
-
-            <!-- Step C1: paste offer -->
-            <div id="clientStep1" class="lobby-step">
-                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
-                    Cole aqui o código que o Mestre enviou:
-                </p>
-                <textarea id="clientOfferInput" class="code-textarea" rows="4"
-                    placeholder="Cole o código do Mestre aqui…"></textarea>
-                <button id="lobbyJoinBtn" class="btn" style="width:100%;justify-content:center;margin-top:0.5rem;">
-                    Gerar Resposta
-                </button>
-            </div>
-
-            <!-- Step C2: show answer code (hidden initially) -->
-            <div id="clientStep2" class="lobby-step hidden">
-                <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.4rem;">
-                    <strong style="color:var(--text-primary);">Envie este código ao Mestre:</strong>
-                </p>
-                <textarea id="clientAnswerDisplay" class="code-textarea" rows="4" readonly></textarea>
-                <button id="copyAnswerBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.4rem;">
-                    📋 Copiar resposta
-                </button>
-                <p id="clientWaitMsg" style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.75rem;">
-                    <span class="spinner"></span> Aguardando o Mestre finalizar a conexão…
-                </p>
-            </div>
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">
+                Cole o código fornecido pelo Mestre.
+            </p>
+            <input type="text" id="joinIdInput" class="input-base" placeholder="Cole o código da sessão aqui"
+                autocomplete="off" spellcheck="false" style="margin-bottom:0.5rem;">
+            <button id="lobbyJoinBtn" class="btn" style="width:100%;justify-content:center;">
+                Conectar ao Mestre
+            </button>
         </div>
 
-        <!-- Status display -->
         <div id="lobbyStatus"></div>
 
-        <!-- Back button -->
         <button id="lobbyBackBtn" class="btn btn-ghost" style="margin-top:0.75rem;width:100%;justify-content:center;">
             ← Voltar ao Menu Principal
         </button>
@@ -2434,133 +2392,88 @@ createNewMapBtn.addEventListener('click', () => showMapApplication(true));
 loadExistingMapBtn.addEventListener('click', () => mainLoadMapInput.click());
 
 // ============================================================
-//   P2P STATE — Native WebRTC, manual SDP exchange
-//   Why: PeerJS relies on WebSocket to an external broker.
-//   Mobile browsers block that WebSocket from file:// origins.
-//   Native RTCPeerConnection + copy-paste SDP needs NO broker,
-//   NO external server, works from file:// on any device.
 // ============================================================
-let dataChannels  = [];       // RTCDataChannel[]  — one per connected peer
-let peerConns     = [];       // RTCPeerConnection[] — host keeps N, client keeps 1
-let _hostPc       = null;     // host's pending RTCPeerConnection (before answer)
-let isHost        = false;
-let myRole        = null;     // 'host' | 'client' | null
+//   P2P STATE (PeerJS)
+// ============================================================
+let peer        = null;
+let connections = [];     // DataConnection[]: Host keeps N; Client keeps 1
+let isHost      = false;
+let myRole      = null;   // 'host' | 'client' | null (single-player)
 let _suppressBroadcast = false;
 
 // Image chunk reassembly buffer: imageId → { npcId, chunks[], total, received }
 const imageAssemblyBuffer = {};
 
-// ICE servers: STUN for same-network, TURN for cross-network / NAT
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.cloudflare.com:3478'  },
-    // Open Relay Project — free public TURN, works cross-network
-    {
-        urls: [
-            'turn:global.relay.metered.ca:80',
-            'turn:global.relay.metered.ca:443',
-            'turns:global.relay.metered.ca:443'
-        ],
-        username:   'openrelayproject',
-        credential: 'openrelayproject'
-    }
-];
-
-// How long to wait for ICE candidates before giving up
-const ICE_GATHER_TIMEOUT = 6000;
-
-// ── DOM refs for lobby ───────────────────────────────────────
+// DOM refs for lobby
 const lobbyScreen       = $('lobbyScreen');
 const lobbyHostBtn      = $('lobbyHostBtn');
 const lobbyHostEnterBtn = $('lobbyHostEnterBtn');
 const lobbyJoinBtn      = $('lobbyJoinBtn');
 const lobbyBackBtn      = $('lobbyBackBtn');
-const hostStep1         = $('hostStep1');
-const hostStep2         = $('hostStep2');
-const hostOfferDisplay  = $('hostOfferDisplay');
-const copyOfferBtn      = $('copyOfferBtn');
-const hostAnswerInput   = $('hostAnswerInput');
-const applyAnswerBtn    = $('applyAnswerBtn');
-const clientStep1       = $('clientStep1');
-const clientStep2       = $('clientStep2');
-const clientOfferInput  = $('clientOfferInput');
-const clientAnswerDisplay = $('clientAnswerDisplay');
-const copyAnswerBtn     = $('copyAnswerBtn');
-const clientWaitMsg     = $('clientWaitMsg');
+const hostIdContainer   = $('hostIdContainer');
+const hostIdDisplay     = $('hostIdDisplay');
+const copyHostIdBtn     = $('copyHostIdBtn');
+const joinIdInput       = $('joinIdInput');
 const lobbyStatusEl     = $('lobbyStatus');
 const peerCounterBadge  = $('peerCounterBadge');
 const peerCounterText   = $('peerCounterText');
 const peerRoleText      = $('peerRoleText');
 
 // ============================================================
-//   TRANSPORT LAYER
+//   TRANSPORT
 // ============================================================
-
-// Send JSON string to ALL open DataChannels.
 function broadcast(payload) {
     if (_suppressBroadcast || myRole === null) return;
     const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    dataChannels.forEach(dc => {
-        if (dc.readyState === 'open') {
-            try { dc.send(str); } catch(e) { console.warn('[P2P] send error', e); }
+    connections.forEach(conn => {
+        if (conn && conn.open) {
+            try { conn.send(str); } catch(e) { console.warn('[P2P] send error', e); }
         }
     });
 }
 
-// Host only: forward string to every DC except the source.
-function relay(str, sourceDc) {
+function relay(str, sourceConn) {
     if (!isHost) return;
-    dataChannels.forEach(dc => {
-        if (dc !== sourceDc && dc.readyState === 'open') {
-            try { dc.send(str); } catch(e) {}
+    connections.forEach(conn => {
+        if (conn !== sourceConn && conn && conn.open) {
+            try { conn.send(str); } catch(e) {}
         }
     });
 }
 
-// Send a payload on a specific DataChannel (used by sendFullStateSync).
-function connSend(dc, payload) {
-    if (!dc || dc.readyState !== 'open') return;
+function connSend(conn, payload) {
+    if (!conn || !conn.open) return;
     const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    try { dc.send(str); } catch(e) { console.warn('[P2P] connSend failed', e); }
+    try { conn.send(str); } catch(e) { console.warn('[P2P] connSend failed', e); }
 }
 
-// Central message router — called by every DataChannel.onmessage.
-function handleRemoteMessage(raw, sourceDc) {
+function handleRemoteMessage(raw, sourceConn) {
     let msg, str;
     try {
-        if (typeof raw === 'string') {
-            str = raw;
-            msg = JSON.parse(raw);
-        } else {
-            str = JSON.stringify(raw);
-            msg = raw;
-        }
+        if (typeof raw === 'string') { str = raw; msg = JSON.parse(raw); }
+        else { str = JSON.stringify(raw); msg = raw; }
     } catch(e) { console.warn('[P2P] parse error', e); return; }
 
-    // Host relays canonical string to all other clients first
-    if (isHost && sourceDc) relay(str, sourceDc);
+    if (isHost && sourceConn) relay(str, sourceConn);
 
     _suppressBroadcast = true;
     try {
         switch (msg.type) {
 
             case 'full_state_sync': {
-                const { backgroundImage: _bg, ...msClean } = msg.mapSettings || {};
+                const { backgroundImage:_bg, ...msClean } = msg.mapSettings || {};
                 mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...msClean };
                 npcs = msg.npcs || {};
                 tokens = (msg.tokens || []).map(t => ({
                     ...t, imageObj:null, isDragging:false,
-                    widthInGrids: t.widthInGrids||1, heightInGrids: t.heightInGrids||1
+                    widthInGrids:t.widthInGrids||1, heightInGrids:t.heightInGrids||1
                 }));
                 drawings         = msg.drawings        || [];
                 initiativeOrder  = msg.initiativeOrder || [];
                 currentTurnIndex = msg.currentTurnIndex || 0;
                 mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
                 reloadTokenImages().then(() => {
-                    resizeCanvasAndDraw();
-                    renderNpcList();
-                    renderInitiative();
+                    resizeCanvasAndDraw(); renderNpcList(); renderInitiative();
                 });
                 break;
             }
@@ -2572,8 +2485,7 @@ function handleRemoteMessage(raw, sourceDc) {
             }
 
             case 'token_add': {
-                if (!npcs[msg.npc.id])
-                    npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:'' };
+                if (!npcs[msg.npc.id]) npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:''};
                 if (!tokens.find(t => t.id === msg.token.id))
                     tokens.push({ ...msg.token, imageObj:null, isDragging:false });
                 saveStateToStorage(); renderNpcList(); drawCanvas();
@@ -2624,7 +2536,7 @@ function handleRemoteMessage(raw, sourceDc) {
             }
 
             case 'map_settings_update': {
-                const { backgroundImage: _b, ...inc } = msg.mapSettings || {};
+                const { backgroundImage:_b, ...inc } = msg.mapSettings || {};
                 mapSettings = { ...mapSettings, ...inc };
                 mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
                 saveStateToStorage(); resizeCanvasAndDraw();
@@ -2650,7 +2562,7 @@ function handleRemoteMessage(raw, sourceDc) {
             case 'image_chunk': {
                 const { imageId, npcId, chunkIndex, totalChunks, data } = msg;
                 if (!imageAssemblyBuffer[imageId])
-                    imageAssemblyBuffer[imageId] = { npcId, chunks: new Array(totalChunks), total: totalChunks, received: 0 };
+                    imageAssemblyBuffer[imageId] = { npcId, chunks:new Array(totalChunks), total:totalChunks, received:0 };
                 const buf = imageAssemblyBuffer[imageId];
                 if (buf.chunks[chunkIndex] === undefined) {
                     buf.chunks[chunkIndex] = data;
@@ -2661,10 +2573,7 @@ function handleRemoteMessage(raw, sourceDc) {
                         if (npcId === '__bg__') {
                             mapSettings.backgroundImage = base64;
                             saveStateToStorage();
-                            loadMapBackground().then(() => {
-                                drawCanvas();
-                                showFeedback('Fundo do mapa recebido!', 'success');
-                            });
+                            loadMapBackground().then(() => { drawCanvas(); showFeedback('Fundo do mapa recebido!', 'success'); });
                         } else if (npcs[npcId]) {
                             npcs[npcId].tokenImageBase64 = base64;
                             saveStateToStorage();
@@ -2694,43 +2603,38 @@ function handleRemoteMessage(raw, sourceDc) {
 const CHUNK_SIZE = 12000;
 
 function broadcastImageChunks(npcId, base64String) {
-    if (!base64String || myRole === null || dataChannels.length === 0) return;
+    if (!base64String || myRole === null || connections.length === 0) return;
     const imageId     = `live_${npcId}_${Date.now()}`;
     const totalChunks = Math.ceil(base64String.length / CHUNK_SIZE);
     for (let i = 0; i < totalChunks; i++) {
         const chunk = base64String.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        setTimeout(() => {
-            broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk });
-        }, i * 10);
+        setTimeout(() => broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk }), i * 10);
     }
 }
 
 function broadcastMapBackgroundChunks(base64String) {
-    if (!base64String || myRole === null || dataChannels.length === 0) return;
+    if (!base64String || myRole === null || connections.length === 0) return;
     const npcId       = '__bg__';
     const imageId     = `bg_${Date.now()}`;
     const totalChunks = Math.ceil(base64String.length / CHUNK_SIZE);
     for (let i = 0; i < totalChunks; i++) {
         const chunk = base64String.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        setTimeout(() => {
-            broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk });
-        }, i * 10);
+        setTimeout(() => broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk }), i * 10);
     }
 }
 
 // ============================================================
-//   FULL STATE SYNC  (host → new client on channel open)
+//   FULL STATE SYNC (host → new client)
 // ============================================================
-function sendFullStateSync(dc) {
-    // Strip images from the main payload — they travel as chunks
-    const { backgroundImage: _bg, ...msClean } = mapSettings;
+function sendFullStateSync(conn) {
+    const { backgroundImage:_bg, ...msClean } = mapSettings;
     const npcsClean = {};
     Object.keys(npcs).forEach(id => {
-        const { tokenImageBase64: _img, ...rest } = npcs[id];
+        const { tokenImageBase64:_img, ...rest } = npcs[id];
         npcsClean[id] = rest;
     });
 
-    connSend(dc, {
+    connSend(conn, {
         type: 'full_state_sync',
         mapSettings:    msClean,
         npcs:           npcsClean,
@@ -2740,9 +2644,8 @@ function sendFullStateSync(dc) {
         currentTurnIndex
     });
 
-    // Schedule image chunks after the state is applied client-side
     const sessionId = Date.now();
-    let delay = 500; // generous head-start for full_state_sync to land
+    let delay = 500;
 
     Object.keys(npcs).forEach(npcId => {
         const base64 = npcs[npcId].tokenImageBase64;
@@ -2751,7 +2654,7 @@ function sendFullStateSync(dc) {
         const imageId = `sync_${sessionId}_${npcId}`;
         for (let i = 0; i < total; i++) {
             const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-            setTimeout(() => connSend(dc, { type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            setTimeout(() => connSend(conn, { type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks:total, data:chunk }), delay);
             delay += 12;
         }
         delay += 100;
@@ -2763,61 +2666,170 @@ function sendFullStateSync(dc) {
         const imageId = `sync_${sessionId}___bg__`;
         for (let i = 0; i < total; i++) {
             const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-            setTimeout(() => connSend(dc, { type:'image_chunk', imageId, npcId:'__bg__', chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            setTimeout(() => connSend(conn, { type:'image_chunk', imageId, npcId:'__bg__', chunkIndex:i, totalChunks:total, data:chunk }), delay);
             delay += 12;
         }
     }
 }
 
 // ============================================================
-//   SDP ENCODE / DECODE  (compact base64 for copy-paste / QR)
+//   PEERJS CONFIG
 // ============================================================
-function encodeSession(data) {
-    return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-}
-function decodeSession(code) {
-    return JSON.parse(decodeURIComponent(escape(atob(code.trim().replace(/\s/g,'')))));
+function makePeerConfig() {
+    return {
+        host:   '0.peerjs.com',
+        port:   443,
+        path:   '/',
+        secure: true,
+        debug:  1,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302'  },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                {
+                    urls: [
+                        'turn:global.relay.metered.ca:80',
+                        'turn:global.relay.metered.ca:443',
+                        'turns:global.relay.metered.ca:443'
+                    ],
+                    username:   'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ]
+        }
+    };
 }
 
-// Wait for ICE gathering to finish (or timeout)
-function waitForICE(pc) {
-    return new Promise(resolve => {
-        if (pc.iceGatheringState === 'complete') { resolve(); return; }
-        const done = () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); resolve(); } };
-        const t = setTimeout(resolve, ICE_GATHER_TIMEOUT);
-        pc.addEventListener('icegatheringstatechange', done);
+// ============================================================
+//   HOST INITIALIZATION
+// ============================================================
+function initAsHost() {
+    destroyPeer();
+    isHost = true;
+    myRole = 'host';
+
+    lobbyHostBtn.disabled = true;
+    setLobbyStatus('⏳ Inicializando conexão P2P…', 'waiting');
+
+    peer = new Peer(undefined, makePeerConfig());
+
+    const openTimeout = setTimeout(() => {
+        if (!peer || peer.disconnected) {
+            setLobbyStatus('❌ Timeout: servidor de sinalização não respondeu. Verifique sua conexão.', 'error');
+            lobbyHostBtn.disabled = false;
+        }
+    }, 15000);
+
+    peer.on('open', id => {
+        clearTimeout(openTimeout);
+        hostIdDisplay.textContent = id;
+        hostIdContainer.classList.remove('hidden');
+        setLobbyStatus('✅ Sessão criada! Aguardando jogadores…', 'waiting');
     });
-}
 
-// ============================================================
-//   DataChannel SETUP  (called for both host and client channels)
-// ============================================================
-function setupDataChannel(dc) {
-    dc.addEventListener('open', () => {
-        dataChannels.push(dc);
-        updatePeerBadge();
+    peer.on('connection', conn => setupHostConnection(conn));
 
-        if (isHost) {
-            showFeedback(`🟢 Jogador conectado! (${dataChannels.filter(d=>d.readyState==='open').length} online)`, 'success');
-            if (!lobbyScreen.classList.contains('hidden')) {
-                setLobbyStatus(`✅ Jogador conectado! Entre no mapa quando quiser.`, 'connected');
-            }
-            sendFullStateSync(dc);
-        } else {
-            // Client: DataChannel opened → we're fully connected
-            // The full_state_sync will arrive shortly and trigger map display
+    peer.on('error', err => {
+        clearTimeout(openTimeout);
+        console.error('[PeerJS Host]', err.type, err);
+        const msgs = {
+            'network':       'Sem acesso à internet ou broker bloqueado.',
+            'server-error':  'Erro no servidor de sinalização. Tente novamente.',
+            'socket-error':  'Falha no WebSocket.',
+            'socket-closed': 'Conexão com o broker encerrada inesperadamente.',
+            'unavailable-id':'ID já em uso. Tente criar novamente.'
+        };
+        setLobbyStatus(`❌ ${msgs[err.type] || 'Erro: ' + err.type}`, 'error');
+        lobbyHostBtn.disabled = false;
+        myRole = null; isHost = false;
+    });
+
+    peer.on('disconnected', () => {
+        if (peer && !peer.destroyed) {
+            setLobbyStatus('⚠️ Broker desconectou. Reconectando…', 'waiting');
+            try { peer.reconnect(); } catch(e) {}
         }
     });
+}
 
-    dc.addEventListener('message', (e) => {
-        const wasInLobby = !lobbyScreen.classList.contains('hidden');
+function setupHostConnection(conn) {
+    conn.on('open', () => {
+        connections.push(conn);
+        updatePeerBadge();
+        showFeedback(`🟢 Jogador conectado! (${connections.filter(c=>c.open).length} online)`, 'success');
+        if (!lobbyScreen.classList.contains('hidden')) {
+            setLobbyStatus(`✅ ${connections.filter(c=>c.open).length} jogador(es) conectado(s). Entre no mapa quando quiser.`, 'connected');
+        }
+        sendFullStateSync(conn);
+    });
+    conn.on('data', raw => handleRemoteMessage(raw, conn));
+    conn.on('close', () => {
+        connections = connections.filter(c => c !== conn);
+        updatePeerBadge();
+        showFeedback('🔴 Um jogador desconectou.', 'info');
+    });
+    conn.on('error', err => {
+        console.error('[PeerJS Host] conn error', err);
+        connections = connections.filter(c => c !== conn);
+        updatePeerBadge();
+    });
+}
+
+// ============================================================
+//   CLIENT INITIALIZATION
+// ============================================================
+function initAsClient(hostId) {
+    destroyPeer();
+    isHost = false;
+    myRole = 'client';
+
+    lobbyJoinBtn.disabled = true;
+    setLobbyStatus('⏳ Conectando ao servidor de sinalização…', 'waiting');
+
+    peer = new Peer(undefined, makePeerConfig());
+
+    const openTimeout = setTimeout(() => {
+        setLobbyStatus('❌ Timeout. Verifique sua internet e o código.', 'error');
+        lobbyJoinBtn.disabled = false;
+        myRole = null;
+    }, 15000);
+
+    peer.on('open', () => {
+        clearTimeout(openTimeout);
+        setLobbyStatus('⏳ Encontrando o Mestre…', 'waiting');
+        const conn = peer.connect(hostId.trim(), { reliable: true });
+        setupClientConnection(conn);
+    });
+
+    peer.on('error', err => {
+        clearTimeout(openTimeout);
+        console.error('[PeerJS Client]', err.type, err);
+        const msgs = {
+            'peer-unavailable': 'Mestre não encontrado. Verifique o código.',
+            'network':          'Sem acesso à internet.',
+            'server-error':     'Erro no servidor de sinalização.',
+            'socket-error':     'Falha no WebSocket.'
+        };
+        setLobbyStatus(`❌ ${msgs[err.type] || 'Erro: ' + err.type}`, 'error');
+        lobbyJoinBtn.disabled = false;
+        myRole = null;
+    });
+}
+
+function setupClientConnection(conn) {
+    conn.on('open', () => {
+        connections = [conn];
+        updatePeerBadge();
+        setLobbyStatus('✅ Conectado! Aguardando dados do mapa…', 'connected');
+    });
+
+    conn.on('data', raw => {
         let msgType = null;
-        try { msgType = JSON.parse(e.data).type; } catch(_) {}
-
-        handleRemoteMessage(e.data, isHost ? dc : null);
-
-        // Client: after receiving full_state_sync, exit lobby and show map
-        if (!isHost && wasInLobby && msgType === 'full_state_sync') {
+        try { msgType = (typeof raw === 'object' && raw !== null) ? raw.type : JSON.parse(raw).type; } catch(e) {}
+        const wasInLobby = !lobbyScreen.classList.contains('hidden');
+        handleRemoteMessage(raw, null);
+        if (wasInLobby && msgType === 'full_state_sync') {
             setTimeout(() => {
                 hideLobbyScreen();
                 mapApplication.classList.remove('hidden');
@@ -2826,148 +2838,23 @@ function setupDataChannel(dc) {
                 updateToggleButtonPositions();
                 updateToolButtonsState();
                 updateTokenControlsState();
-                showFeedback('🟢 Conectado! Mapa sincronizado.', 'success');
+                showFeedback('🟢 Mapa carregado! Bem-vindo à sessão.', 'success');
             }, 300);
         }
     });
 
-    dc.addEventListener('close', () => {
-        dataChannels = dataChannels.filter(d => d !== dc);
+    conn.on('close', () => {
+        connections = [];
         updatePeerBadge();
-        showFeedback('🔴 Um jogador desconectou.', 'info');
+        showFeedback('🔴 Conexão com o Mestre perdida.', 'error');
     });
 
-    dc.addEventListener('error', e => {
-        console.error('[WebRTC] DataChannel error', e);
-        dataChannels = dataChannels.filter(d => d !== dc);
+    conn.on('error', err => {
+        console.error('[PeerJS Client] conn error', err);
+        connections = [];
         updatePeerBadge();
+        showFeedback('❌ Erro na conexão P2P.', 'error');
     });
-}
-
-// ============================================================
-//   HOST FLOW
-// ============================================================
-async function initAsHost() {
-    destroyPeer();
-    isHost  = true;
-    myRole  = 'host';
-
-    lobbyHostBtn.disabled = true;
-    setLobbyStatus('⏳ Gerando código de sessão… (pode levar alguns segundos)', 'waiting');
-
-    try {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        _hostPc = pc;
-        peerConns.push(pc);
-
-        // Create the data channel before the offer
-        const dc = pc.createDataChannel('escudo', { ordered: true });
-        setupDataChannel(dc);
-
-        pc.addEventListener('connectionstatechange', () => {
-            if (pc.connectionState === 'failed')
-                showFeedback('❌ Conexão WebRTC falhou. Tente gerar um novo código.', 'error');
-        });
-
-        // Create offer and wait for ALL ICE candidates
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await waitForICE(pc);
-
-        // Encode the complete local description (includes ICE in SDP)
-        const offerCode = encodeSession({
-            type: pc.localDescription.type,
-            sdp:  pc.localDescription.sdp
-        });
-
-        hostOfferDisplay.value = offerCode;
-        hostStep1.classList.add('hidden');
-        hostStep2.classList.remove('hidden');
-        setLobbyStatus('✅ Código gerado! Siga os passos acima.', 'connected');
-
-    } catch(e) {
-        console.error('[WebRTC] initAsHost error:', e);
-        setLobbyStatus(`❌ Erro: ${e.message}`, 'error');
-        lobbyHostBtn.disabled = false;
-        myRole = null; isHost = false;
-    }
-}
-
-// Host applies the client's answer code
-async function applyClientAnswer() {
-    const raw = hostAnswerInput.value.trim();
-    if (!raw) {
-        setLobbyStatus('❌ Cole a resposta do jogador antes de conectar.', 'error');
-        return;
-    }
-    applyAnswerBtn.disabled = true;
-    setLobbyStatus('⏳ Conectando…', 'waiting');
-    try {
-        const { type, sdp } = decodeSession(raw);
-        await _hostPc.setRemoteDescription(new RTCSessionDescription({ type, sdp }));
-        setLobbyStatus('✅ Conexão estabelecida! Aguardando sincronização…', 'connected');
-        // DataChannel 'open' event will fire shortly and call sendFullStateSync
-    } catch(e) {
-        console.error('[WebRTC] applyClientAnswer error:', e);
-        setLobbyStatus(`❌ Código inválido ou erro: ${e.message}`, 'error');
-        applyAnswerBtn.disabled = false;
-    }
-}
-
-// ============================================================
-//   CLIENT FLOW
-// ============================================================
-async function initAsClient() {
-    const raw = clientOfferInput.value.trim();
-    if (!raw) {
-        setLobbyStatus('❌ Cole o código do Mestre antes de continuar.', 'error');
-        return;
-    }
-
-    destroyPeer();
-    isHost = false;
-    myRole = 'client';
-
-    lobbyJoinBtn.disabled = true;
-    setLobbyStatus('⏳ Processando código e gerando resposta…', 'waiting');
-
-    try {
-        const { type, sdp } = decodeSession(raw);
-
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        peerConns.push(pc);
-
-        // Client receives the DataChannel created by host
-        pc.addEventListener('datachannel', e => {
-            setupDataChannel(e.channel);
-        });
-
-        pc.addEventListener('connectionstatechange', () => {
-            if (pc.connectionState === 'failed')
-                showFeedback('❌ Conexão WebRTC falhou.', 'error');
-        });
-
-        await pc.setRemoteDescription(new RTCSessionDescription({ type, sdp }));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await waitForICE(pc);
-
-        const answerCode = encodeSession({
-            type: pc.localDescription.type,
-            sdp:  pc.localDescription.sdp
-        });
-
-        clientAnswerDisplay.value = answerCode;
-        clientStep1.classList.add('hidden');
-        clientStep2.classList.remove('hidden');
-        setLobbyStatus('✅ Resposta gerada! Envie-a ao Mestre.', 'connected');
-
-    } catch(e) {
-        console.error('[WebRTC] initAsClient error:', e);
-        setLobbyStatus(`❌ Código inválido ou erro: ${e.message}`, 'error');
-        lobbyJoinBtn.disabled = false;
-        myRole = null;
-    }
 }
 
 // ============================================================
@@ -2980,25 +2867,15 @@ function showLobbyScreen() {
     resetLobbyUI();
 }
 
-function hideLobbyScreen() {
-    lobbyScreen.classList.add('hidden');
-}
+function hideLobbyScreen() { lobbyScreen.classList.add('hidden'); }
 
 function resetLobbyUI() {
     setLobbyStatus('', '');
-    // Reset host steps
-    hostStep1.classList.remove('hidden');
-    hostStep2.classList.add('hidden');
-    hostOfferDisplay.value  = '';
-    hostAnswerInput.value   = '';
-    applyAnswerBtn.disabled = false;
-    lobbyHostBtn.disabled   = false;
-    // Reset client steps
-    clientStep1.classList.remove('hidden');
-    clientStep2.classList.add('hidden');
-    clientOfferInput.value     = '';
-    clientAnswerDisplay.value  = '';
-    lobbyJoinBtn.disabled      = false;
+    hostIdContainer.classList.add('hidden');
+    hostIdDisplay.textContent = '—';
+    joinIdInput.value = '';
+    lobbyHostBtn.disabled = false;
+    lobbyJoinBtn.disabled = false;
 }
 
 function setLobbyStatus(message, type) {
@@ -3010,50 +2887,32 @@ function setLobbyStatus(message, type) {
 function updatePeerBadge() {
     if (myRole === null) { peerCounterBadge.classList.remove('visible'); return; }
     peerCounterBadge.classList.add('visible');
-    const n = dataChannels.filter(d => d.readyState === 'open').length + 1;
+    const n = connections.filter(c => c && c.open).length + 1;
     peerCounterText.textContent = `${n} jogador${n !== 1 ? 'es' : ''}`;
     peerRoleText.textContent    = isHost ? 'Mestre' : 'Jogador';
 }
 
 function destroyPeer() {
-    dataChannels.forEach(dc => { try { dc.close(); } catch(e) {} });
-    dataChannels = [];
-    peerConns.forEach(pc => { try { pc.close(); } catch(e) {} });
-    peerConns = [];
-    if (_hostPc && !peerConns.includes(_hostPc)) {
-        try { _hostPc.close(); } catch(e) {}
-    }
-    _hostPc = null;
+    connections.forEach(c => { try { c.close(); } catch(e) {} });
+    connections = [];
+    if (peer && !peer.destroyed) { try { peer.destroy(); } catch(e) {} }
+    peer = null;
 }
 
-// Clipboard helper (works on file:// too)
 function copyFallback(text) {
     const ta = D.createElement('textarea');
     ta.value = text;
     ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
-    D.body.appendChild(ta);
-    ta.focus(); ta.select();
+    D.body.appendChild(ta); ta.focus(); ta.select();
     try { D.execCommand('copy'); showFeedback('Código copiado!', 'success'); }
     catch(e) { showFeedback('Selecione e copie manualmente.', 'info'); }
     D.body.removeChild(ta);
-}
-
-function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text)
-            .then(()  => showFeedback('Código copiado!', 'success'))
-            .catch(()  => copyFallback(text));
-    } else {
-        copyFallback(text);
-    }
 }
 
 // ============================================================
 //   LOBBY BUTTON LISTENERS
 // ============================================================
 lobbyHostBtn.addEventListener('click', () => initAsHost());
-
-applyAnswerBtn.addEventListener('click', () => applyClientAnswer());
 
 lobbyHostEnterBtn.addEventListener('click', () => {
     hideLobbyScreen();
@@ -3062,21 +2921,28 @@ lobbyHostEnterBtn.addEventListener('click', () => {
     updatePeerBadge();
 });
 
-lobbyJoinBtn.addEventListener('click', () => initAsClient());
+lobbyJoinBtn.addEventListener('click', () => {
+    const id = joinIdInput.value.trim();
+    if (!id) { setLobbyStatus('❌ Cole o código da sessão antes de conectar.', 'error'); return; }
+    initAsClient(id);
+});
 
-copyOfferBtn.addEventListener('click', () => copyText(hostOfferDisplay.value));
+joinIdInput.addEventListener('keydown', e => { if (e.key === 'Enter') lobbyJoinBtn.click(); });
 
-copyAnswerBtn.addEventListener('click', () => copyText(clientAnswerDisplay.value));
+copyHostIdBtn.addEventListener('click', () => {
+    const id = hostIdDisplay.textContent;
+    if (!id || id === '—') return;
+    if (navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(id).then(() => showFeedback('Código copiado!', 'success')).catch(() => copyFallback(id));
+    else copyFallback(id);
+});
 
 lobbyBackBtn.addEventListener('click', () => {
     destroyPeer();
     myRole = null; isHost = false;
-    hideLobbyScreen();
-    showMainScreen();
-    updatePeerBadge();
+    hideLobbyScreen(); showMainScreen(); updatePeerBadge();
 });
 
-// ============================================================
 //   INIT
 // ============================================================
 window.addEventListener('resize', () => {
