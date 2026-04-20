@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escudo do Mestre - FORJA RPG</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CDN removed: only 7 utility classes used, inlined below -->
+    <style>
+      .hidden{display:none!important}
+      .w-full{width:100%}
+      .text-sm{font-size:.875rem;line-height:1.25rem}
+      .text-lg{font-size:1.125rem;line-height:1.75rem}
+      .text-white{color:#fff}
+      .font-semibold{font-weight:600}
+      .font-bold{font-weight:700}
+    </style>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -257,38 +266,82 @@
         /* === HEADER BUTTONS === */
         .header-action-buttons {
             position: fixed;
-            top: 0.75rem;
+            top: 0.6rem;
             right: 1rem;
             display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
+            flex-direction: row;
+            gap: 0.35rem;
             z-index: 100;
+            align-items: center;
         }
 
-        /* === MAP TITLE OVERLAY === */
-        .map-info-overlay {
+        /* === MAP NAME PILL (compact, top-center) === */
+        #mapNamePill {
             position: fixed;
-            top: 0.75rem;
+            top: 0.6rem;
             left: 50%;
             transform: translateX(-50%);
-            text-align: center;
             z-index: 100;
-            background-color: rgba(13,17,23,0.85);
+            background-color: rgba(13,17,23,0.82);
             backdrop-filter: blur(8px);
-            padding: 0.5rem 1.25rem;
-            border-radius: 0.75rem;
+            padding: 0.3rem 0.875rem;
+            border-radius: 9999px;
             border: 1px solid var(--border);
-            transition: all 0.3s ease-in-out;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: default;
+            transition: color 0.2s;
+        }
+        #mapNamePill:hover { color: var(--text-primary); }
+
+        /* === SAVE DROPDOWN === */
+        .save-dropdown-wrap {
+            position: relative;
+        }
+        #saveDropdown {
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            right: 0;
+            background: rgba(13,17,23,0.97);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-light);
+            border-radius: 0.625rem;
+            min-width: 180px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 200;
+            overflow: hidden;
+            display: none;
+        }
+        #saveDropdown.open { display: block; }
+        .save-dropdown-item {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            gap: 0.5rem;
+            padding: 0.55rem 0.875rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            transition: background 0.12s, color 0.12s;
         }
-        .map-info-overlay.collapsed {
-            transform: translateX(-50%) translateY(-120%);
-            opacity: 0;
-            pointer-events: none;
+        .save-dropdown-item:hover { background: var(--bg-light); color: var(--text-primary); }
+        .save-dropdown-item.danger:hover { background: rgba(220,38,38,0.15); color: var(--danger); }
+        .save-dropdown-sep { height: 1px; background: var(--border); margin: 0.2rem 0; }
+        .save-last-saved {
+            padding: 0.35rem 0.875rem 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
         }
+
+        /* === CONE RULER === */
+        .ruler-mode-btn.active-mode { background: rgba(250,204,21,0.2); border-color: #fde68a; color: #fde68a; }
 
         /* === FEEDBACK === */
         .feedback-message {
@@ -781,21 +834,29 @@
     <!-- CENTRAL CANVAS -->
     <main class="central-content">
 
-        <!-- Map title overlay -->
-        <div id="mapTitleOverlay" class="map-info-overlay">
-            <button id="toggleMapTitleBtn" class="btn btn-icon" style="font-size:0.75rem;width:1.75rem;height:1.75rem;" data-tip="Minimizar">▲</button>
-            <div>
-                <h1 class="title-font" style="font-size:1.4rem;font-weight:900;color:white;line-height:1.1;">⚔️ Escudo do Mestre</h1>
-                <p id="mapNameDisplay" style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.1rem;"></p>
-            </div>
-        </div>
+        <!-- Map name pill (compact, top-center) -->
+        <div id="mapNamePill">📍 <span id="mapNameDisplay">Mapa</span></div>
 
-        <!-- Header action buttons -->
+        <!-- Header action buttons — horizontal strip top-right -->
         <div class="header-action-buttons">
-            <button id="mapSettingsBtn" class="btn btn-sm">⚙️ Config</button>
-            <button id="saveMapFileBtn" class="btn btn-sm">💾 Salvar</button>
-            <input type="file" id="loadMapInput" accept=".json" class="hidden">
-            <button id="loadMapFileBtn" class="btn btn-ghost btn-sm">📂 Carregar</button>
+            <button id="mapSettingsBtn" class="btn btn-ghost btn-sm" style="font-size:0.8rem;" title="Configurações do Mapa">⚙️ Config</button>
+
+            <!-- Save / Load dropdown -->
+            <div class="save-dropdown-wrap">
+                <button id="saveDropdownBtn" class="btn btn-sm" style="font-size:0.8rem;" title="Salvar / Carregar">💾 Salvar ▾</button>
+                <div id="saveDropdown">
+                    <button class="save-dropdown-item" id="saveMapFileBtn">💾 Salvar arquivo (.json)</button>
+                    <button class="save-dropdown-item" id="saveMapPngBtn">🖼️ Exportar como imagem</button>
+                    <div class="save-dropdown-sep"></div>
+                    <input type="file" id="loadMapInput" accept=".json" class="hidden">
+                    <button class="save-dropdown-item" id="loadMapFileBtn">📂 Carregar arquivo</button>
+                    <div class="save-dropdown-sep"></div>
+                    <button class="save-dropdown-item danger" id="clearMapFromSaveBtn">🗑 Limpar tudo</button>
+                    <div id="saveLastSavedRow" class="save-last-saved" style="display:none;">
+                        Salvo: <span id="saveLastSavedTime">—</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="canvasContainer">
@@ -825,12 +886,23 @@
 
                 <!-- Tools -->
                 <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover (M)">✥</button>
-                <button id="rulerBtn" class="btn btn-icon" data-tip="Régua (R)">📏</button>
+                <button id="rulerBtn" class="btn btn-icon" data-tip="Régua Linha (R)">📏</button>
+                <button id="coneBtn" class="btn btn-icon" data-tip="Régua Cone (C)">🔺</button>
                 <button id="drawLineBtn" class="btn btn-icon" data-tip="Desenhar (D)">✏️</button>
                 <button id="eraserBtn" class="btn btn-icon" data-tip="Borracha (E)">🧹</button>
                 <input type="color" id="drawColorInput" value="#ef4444"
                     style="width:1.75rem;height:1.75rem;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;padding:0;background:none;flex-shrink:0;"
                     data-tip="Cor do Desenho">
+
+                <div class="controls-divider"></div>
+
+                <!-- Unit selector -->
+                <select id="unitQuickSelect" title="Sistema de unidades"
+                    style="background:var(--bg-light);border:1px solid var(--border-light);color:var(--text-secondary);border-radius:0.375rem;padding:0.2rem 0.4rem;font-size:0.75rem;cursor:pointer;height:2.25rem;">
+                    <option value="squares">Quadrados</option>
+                    <option value="meters">Metros</option>
+                    <option value="feet">Pés</option>
+                </select>
 
                 <div class="controls-divider"></div>
 
@@ -971,16 +1043,14 @@
 
 <!-- Map Settings Modal -->
 <div id="mapSettingsModal" class="custom-modal-overlay hidden">
-    <div class="custom-modal-content" style="max-width:520px;">
+    <div class="custom-modal-content" style="max-width:540px;">
         <h3 class="title-font" style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">⚙️ Configurações do Mapa</h3>
+
         <div class="field-group">
             <label class="field-label" for="mapNameInput">Nome do Mapa</label>
             <input type="text" id="mapNameInput" class="input-base" placeholder="Nome do mapa">
         </div>
-        <div class="field-group">
-            <label class="field-label" for="unitInput">Unidade de Distância</label>
-            <input type="text" id="unitInput" class="input-base" placeholder="Ex: metros, pés, quadrados">
-        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;" class="field-group">
             <div>
                 <label class="field-label" for="gridColsInput">Colunas</label>
@@ -991,10 +1061,46 @@
                 <input type="number" id="gridRowsInput" class="input-base" min="5" max="100" value="15">
             </div>
             <div>
-                <label class="field-label" for="cellSizeInput">Tamanho Célula (px)</label>
+                <label class="field-label" for="cellSizeInput">Célula (px)</label>
                 <input type="number" id="cellSizeInput" class="input-base" min="20" max="120" value="40">
             </div>
         </div>
+
+        <!-- Unit system -->
+        <div style="background:rgba(13,17,23,0.5);border:1px solid var(--border);border-radius:0.625rem;padding:0.875rem;margin-bottom:0.875rem;">
+            <p class="field-label" style="margin-bottom:0.5rem;">📐 Sistema de Unidades</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+                <div>
+                    <label class="field-label">Unidade</label>
+                    <select id="unitSystemInput" class="input-base select-base">
+                        <option value="squares">Quadrados</option>
+                        <option value="meters">Metros (m)</option>
+                        <option value="feet">Pés (ft)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" for="scalePerSquareInput">Escala por quadrado</label>
+                    <input type="number" id="scalePerSquareInput" class="input-base" min="0.1" step="0.1" value="1.5" placeholder="1.5">
+                </div>
+            </div>
+            <p id="scalePreviewText" style="font-size:0.75rem;color:var(--text-muted);">
+                1 quadrado = 1.5 m &nbsp;|&nbsp; Corrida: 9 m / turno (6 quadrados)
+            </p>
+        </div>
+
+        <!-- Cone angle -->
+        <div style="background:rgba(13,17,23,0.5);border:1px solid var(--border);border-radius:0.625rem;padding:0.875rem;margin-bottom:0.875rem;">
+            <p class="field-label" style="margin-bottom:0.5rem;">🔺 Ângulo Padrão do Cone</p>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <input type="range" id="coneAngleInput" min="15" max="180" step="5" value="60"
+                    style="flex:1;accent-color:var(--accent);">
+                <span id="coneAngleLabel" style="font-size:0.875rem;font-weight:700;color:var(--text-primary);min-width:3rem;text-align:right;">60°</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                <span>15° (estreito)</span><span>60° (D&D padrão)</span><span>90°</span><span>180° (semicírculo)</span>
+            </div>
+        </div>
+
         <div class="field-group">
             <label class="field-label">Cor do Grid</label>
             <div style="display:flex;gap:0.5rem;align-items:center;">
@@ -1002,6 +1108,7 @@
                 <span style="font-size:0.8125rem;color:var(--text-muted);">Cor das linhas do grid</span>
             </div>
         </div>
+
         <div class="field-group">
             <label class="field-label">Imagem de Fundo</label>
             <input type="file" id="mapBackgroundInput" accept="image/*" class="hidden">
@@ -1011,12 +1118,14 @@
                 <button id="removeMapBackgroundBtn" class="btn btn-danger btn-sm" style="margin-top:0.4rem;width:100%;justify-content:center;">Remover Fundo</button>
             </div>
         </div>
+
         <div class="field-group">
             <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
                 <input type="checkbox" id="showGridLabelsInput" checked style="width:1rem;height:1rem;accent-color:var(--accent);">
                 <span class="field-label" style="margin:0;">Mostrar letras/números no grid</span>
             </label>
         </div>
+
         <div class="custom-modal-buttons">
             <button id="saveMapSettingsBtn" class="btn">✓ Salvar</button>
             <button id="cancelMapSettingsBtn" class="btn btn-ghost">Cancelar</button>
@@ -1095,10 +1204,12 @@ const clearCanvasBtn = $('clearCanvasBtn');
 const zoomInBtn = $('zoomInBtn');
 const zoomOutBtn = $('zoomOutBtn');
 const rulerBtn = $('rulerBtn');
+const coneBtn = $('coneBtn');
 const moveToolBtn = $('moveToolBtn');
 const drawLineBtn = $('drawLineBtn');
 const eraserBtn = $('eraserBtn');
 const drawColorInput = $('drawColorInput');
+const unitQuickSelect = $('unitQuickSelect');
 const undoBtn = $('undoBtn');
 const redoBtn = $('redoBtn');
 const clearSelectionBtn = $('clearSelectionBtn');
@@ -1107,7 +1218,13 @@ const editTokenHpBtn = $('editTokenHpBtn');
 const resetViewBtn = $('resetViewBtn');
 const mapSettingsBtn = $('mapSettingsBtn');
 const clearDrawingsBtn = $('clearDrawingsBtn');
+const saveDropdownBtn = $('saveDropdownBtn');
+const saveDropdown = $('saveDropdown');
 const saveMapFileBtn = $('saveMapFileBtn');
+const saveMapPngBtn = $('saveMapPngBtn');
+const clearMapFromSaveBtn = $('clearMapFromSaveBtn');
+const saveLastSavedRow = $('saveLastSavedRow');
+const saveLastSavedTime = $('saveLastSavedTime');
 const loadMapFileBtn = $('loadMapFileBtn');
 const loadMapInput = $('loadMapInput');
 const customConfirmModal = $('customConfirmModal');
@@ -1116,12 +1233,16 @@ const customConfirmYes = $('customConfirmYes');
 const customConfirmNo = $('customConfirmNo');
 const mapSettingsModal = $('mapSettingsModal');
 const mapNameInput = $('mapNameInput');
-const unitInput = $('unitInput');
 const gridColsInput = $('gridColsInput');
 const gridRowsInput = $('gridRowsInput');
 const cellSizeInput = $('cellSizeInput');
 const gridColorInput = $('gridColorInput');
 const showGridLabelsInput = $('showGridLabelsInput');
+const unitSystemInput = $('unitSystemInput');
+const scalePerSquareInput = $('scalePerSquareInput');
+const scalePreviewText = $('scalePreviewText');
+const coneAngleInput = $('coneAngleInput');
+const coneAngleLabel = $('coneAngleLabel');
 const mapBackgroundInput = $('mapBackgroundInput');
 const uploadMapBackgroundBtn = $('uploadMapBackgroundBtn');
 const mapBackgroundPreviewContainer = $('mapBackgroundPreviewContainer');
@@ -1131,8 +1252,6 @@ const saveMapSettingsBtn = $('saveMapSettingsBtn');
 const cancelMapSettingsBtn = $('cancelMapSettingsBtn');
 const toggleNpcListBtn = $('toggleNpcListBtn');
 const toggleNpcDetailBtn = $('toggleNpcDetailBtn');
-const mapTitleOverlay = $('mapTitleOverlay');
-const toggleMapTitleBtn = $('toggleMapTitleBtn');
 const backToMainBtn = $('backToMainBtn');
 const coordDisplay = $('coordDisplay');
 const zoomDisplay = $('zoomDisplay');
@@ -1172,6 +1291,8 @@ let isPanning = false;
 let lastMouseX = 0, lastMouseY = 0;
 let currentTool = 'move';
 let rulerStart = null, rulerEnd = null;
+let rulerMode = 'line';       // 'line' | 'cone'
+let rulerConeAngle = 60;      // degrees, configurable
 let drawingStart = null, drawingEnd = null;
 let drawColor = '#ef4444';
 const DRAW_WIDTH = 3;
@@ -1180,6 +1301,7 @@ let initiativeOrder = [];
 let currentTurnIndex = 0;
 let hpEditToken = null;
 let feedbackTimer = null;
+let lastSavedTime = null;      // for save UI timestamp
 
 // Undo/Redo
 let undoStack = [];
@@ -1189,6 +1311,9 @@ const MAX_UNDO = 30;
 let mapSettings = {
     name: 'Mapa Padrão',
     unit: 'quadrados',
+    unitSystem: 'squares',     // 'squares' | 'meters' | 'feet'
+    scalePerSquare: 1.5,       // real-world units per square (e.g. 1.5m or 5ft)
+    coneAngle: 60,             // default cone angle in degrees
     gridCols: 20,
     gridRows: 15,
     backgroundImage: '',
@@ -1293,12 +1418,20 @@ async function showMapApplication(clearCurrentMap = false) {
     if (clearCurrentMap) {
         npcs = {}; tokens = []; drawings = []; undoStack = []; redoStack = [];
         initiativeOrder = []; currentTurnIndex = 0; currentNpcId = null; selectedToken = null;
-        mapSettings = { name:'Novo Mapa', unit:'quadrados', gridCols:20, gridRows:15, backgroundImage:'', gridColor:'#4b5563', showGridLabels:true, cellSize:40 };
+        mapSettings = {
+            name:'Novo Mapa', unit:'quad.', unitSystem:'squares', scalePerSquare:1.5,
+            coneAngle:60, gridCols:20, gridRows:15, backgroundImage:'',
+            gridColor:'#4b5563', showGridLabels:true, cellSize:40
+        };
         mapBackgroundImgObj = null;
         localStorage.clear();
     } else {
         const sm = JSON.parse(localStorage.getItem('mapSettings'));
-        if (sm) mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...sm };
+        if (sm) mapSettings = {
+            gridColor:'#4b5563', showGridLabels:true, cellSize:40,
+            unitSystem:'squares', scalePerSquare:1.5, coneAngle:60,
+            ...sm
+        };
         npcs = JSON.parse(localStorage.getItem('npcs')) || {};
         const st = JSON.parse(localStorage.getItem('tokens')) || [];
         tokens = st.map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
@@ -1307,7 +1440,10 @@ async function showMapApplication(clearCurrentMap = false) {
         currentTurnIndex = parseInt(localStorage.getItem('currentTurnIndex')) || 0;
     }
 
-    mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+    // Update the compact pill and toolbar unit selector
+    mapNameDisplay.textContent = mapSettings.name;
+    rulerConeAngle = mapSettings.coneAngle || 60;
+    if (unitQuickSelect) unitQuickSelect.value = mapSettings.unitSystem || 'squares';
     updateNpcForm(false);
 
     await Promise.all([loadMapBackground(), reloadTokenImages()]);
@@ -1660,40 +1796,119 @@ function drawTokens() {
     });
 }
 
+// Helper: convert grid squares to real-world display string
+function sqToUnit(squares) {
+    const sys = mapSettings.unitSystem || 'squares';
+    const scale = mapSettings.scalePerSquare || 1;
+    if (sys === 'squares') return `${squares.toFixed(1)} quad.`;
+    if (sys === 'meters') return `${(squares * scale).toFixed(1)} m`;
+    if (sys === 'feet')   return `${(squares * scale).toFixed(1)} ft`;
+    return `${squares.toFixed(1)} ${mapSettings.unit || ''}`;
+}
+
 function drawRuler() {
     if (!rulerStart || !rulerEnd) return;
     const cs = GS();
     const sx = rulerStart.x * cs, sy = rulerStart.y * cs;
     const ex = rulerEnd.x * cs, ey = rulerEnd.y * cs;
-
-    ctx.save();
-    ctx.shadowColor = '#fde68a'; ctx.shadowBlur = 8 / zoomLevel;
-    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
-    ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 2 / zoomLevel;
-    ctx.setLineDash([6/zoomLevel, 3/zoomLevel]);
-    ctx.stroke(); ctx.setLineDash([]);
-    ctx.shadowBlur = 0; ctx.restore();
-
-    // Endpoints
-    [{ x:sx,y:sy },{ x:ex,y:ey }].forEach(p => {
-        ctx.fillStyle = '#fde68a';
-        ctx.beginPath(); ctx.arc(p.x, p.y, 4/zoomLevel, 0, Math.PI*2); ctx.fill();
-    });
-
-    // Distance label
     const dx = rulerEnd.x - rulerStart.x, dy = rulerEnd.y - rulerStart.y;
-    const eucl = Math.sqrt(dx*dx + dy*dy).toFixed(1);
-    const manh = Math.abs(Math.round(dx)) + Math.abs(Math.round(dy));
-    const mx = (sx+ex)/2, my = (sy+ey)/2;
-    const fs = 13 / zoomLevel;
-    ctx.font = `bold ${fs}px Inter`;
-    const label = `${eucl} ${mapSettings.unit} (▼${manh})`;
-    const tw = ctx.measureText(label).width;
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    ctx.fillRect(mx - tw/2 - 4/zoomLevel, my - fs - 2/zoomLevel, tw + 8/zoomLevel, fs + 6/zoomLevel);
-    ctx.fillStyle = '#fde68a';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(label, mx, my + 2/zoomLevel);
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (rulerMode === 'cone') {
+        // ── CONE ────────────────────────────────────────────────
+        const halfAngle = ((mapSettings.coneAngle || 60) / 2) * Math.PI / 180;
+        const baseAngle = Math.atan2(ey - sy, ex - sx);
+        const radius = dist * cs;          // already in pixel-space
+
+        ctx.save();
+        // Filled cone
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.arc(sx, sy, radius, baseAngle - halfAngle, baseAngle + halfAngle);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(239,68,68,0.18)';
+        ctx.fill();
+        // Cone outline
+        ctx.strokeStyle = 'rgba(239,68,68,0.85)';
+        ctx.lineWidth = 1.5 / zoomLevel;
+        ctx.setLineDash([5/zoomLevel, 3/zoomLevel]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Apex dot
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath(); ctx.arc(sx, sy, 4/zoomLevel, 0, Math.PI*2); ctx.fill();
+        // Endpoint dot
+        ctx.fillStyle = '#fca5a5';
+        ctx.beginPath(); ctx.arc(ex, ey, 3/zoomLevel, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+
+        // Label: range + angle + area
+        const areaSq = Math.PI * dist*dist * (mapSettings.coneAngle/360);
+        const fs = 12 / zoomLevel;
+        const coneAngleDeg = mapSettings.coneAngle || 60;
+        const lines = [
+            `🔺 Alcance: ${sqToUnit(dist)}`,
+            `Ângulo: ${coneAngleDeg}°`,
+            `Área ≈ ${areaSq.toFixed(1)} quad²`
+        ];
+        const maxW = Math.max(...lines.map(l => { ctx.font = `bold ${fs}px Inter`; return ctx.measureText(l).width; }));
+        const lh = fs * 1.5;
+        const bx = ex + 10/zoomLevel, by = ey - (lines.length * lh) / 2;
+        ctx.fillStyle = 'rgba(0,0,0,0.78)';
+        ctx.fillRect(bx - 4/zoomLevel, by - 4/zoomLevel, maxW + 8/zoomLevel, lines.length*lh + 6/zoomLevel);
+        ctx.fillStyle = '#fca5a5';
+        ctx.font = `bold ${fs}px Inter`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        lines.forEach((line, i) => ctx.fillText(line, bx, by + i*lh));
+
+    } else {
+        // ── LINE RULER ──────────────────────────────────────────
+        ctx.save();
+        ctx.shadowColor = '#fde68a'; ctx.shadowBlur = 8 / zoomLevel;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 2 / zoomLevel;
+        ctx.setLineDash([6/zoomLevel, 3/zoomLevel]);
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.shadowBlur = 0; ctx.restore();
+
+        // Endpoints
+        [{ x:sx,y:sy },{ x:ex,y:ey }].forEach(p => {
+            ctx.fillStyle = '#fde68a';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 4/zoomLevel, 0, Math.PI*2); ctx.fill();
+        });
+
+        // Grid-snap dots along the path
+        const steps = Math.floor(dist);
+        if (steps > 0 && steps <= 60) {
+            ctx.fillStyle = 'rgba(253,230,138,0.45)';
+            for (let s = 1; s < steps; s++) {
+                const t = s / dist;
+                ctx.beginPath();
+                ctx.arc(sx + (ex-sx)*t, sy + (ey-sy)*t, 2/zoomLevel, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        // Distance label
+        const eucl = dist.toFixed(1);
+        const manh = Math.abs(Math.round(dx)) + Math.abs(Math.round(dy));
+        const mx = (sx+ex)/2, my = (sy+ey)/2;
+        const fs = 13 / zoomLevel;
+        ctx.font = `bold ${fs}px Inter`;
+        const lineA = `${sqToUnit(parseFloat(eucl))}`;
+        const lineB = `↕ ${sqToUnit(manh)} (Manhattan)`;
+        const wA = ctx.measureText(lineA).width, wB = ctx.measureText(lineB).width;
+        const boxW = Math.max(wA, wB) + 10/zoomLevel;
+        const boxH = fs * 2.6;
+        ctx.fillStyle = 'rgba(0,0,0,0.78)';
+        ctx.fillRect(mx - boxW/2, my - boxH/2, boxW, boxH);
+        ctx.fillStyle = '#fde68a';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(lineA, mx, my - fs*0.7);
+        ctx.font = `${fs * 0.85}px Inter`;
+        ctx.fillStyle = 'rgba(253,230,138,0.7)';
+        ctx.fillText(lineB, mx, my + fs*0.7);
+    }
 }
 
 function drawAllDrawings() {
@@ -1891,13 +2106,13 @@ function onPointerDown(e) {
                 dragOffsetX = world.x - t.x;
                 dragOffsetY = world.y - t.y;
                 found = true;
-                // Move to top of draw order
                 tokens.splice(i,1); tokens.push(t);
                 break;
             }
         }
         if (!found) selectedToken = null;
-    } else if (currentTool === 'ruler') {
+    } else if (currentTool === 'ruler' || currentTool === 'cone') {
+        rulerMode = currentTool === 'cone' ? 'cone' : 'line';
         rulerStart = { x:world.x, y:world.y }; rulerEnd = { ...rulerStart };
     } else if (currentTool === 'draw-line') {
         drawingStart = { x:world.x, y:world.y }; drawingEnd = { ...drawingStart };
@@ -1940,7 +2155,7 @@ function onPointerMove(e) {
             nx < ot.x+ot.widthInGrids && nx+tw > ot.x && ny < ot.y+ot.heightInGrids && ny+th > ot.y);
         if (!overlaps) { selectedToken.x = nx; selectedToken.y = ny; }
         drawCanvas();
-    } else if (currentTool === 'ruler' && rulerStart) {
+    } else if ((currentTool === 'ruler' || currentTool === 'cone') && rulerStart) {
         rulerEnd = { x:world.x, y:world.y }; drawCanvas();
     } else if (currentTool === 'draw-line' && drawingStart) {
         drawingEnd = { x:world.x, y:world.y }; drawCanvas();
@@ -2018,6 +2233,7 @@ document.addEventListener('keydown', e => {
     else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); redo(); }
     else if (e.key === 'm' || e.key === 'M') setTool('move');
     else if (e.key === 'r' || e.key === 'R') setTool('ruler');
+    else if (e.key === 'c' || e.key === 'C') setTool('cone');
     else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
     else if (e.key === 'e' || e.key === 'E') setTool('eraser');
     else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
@@ -2032,17 +2248,20 @@ document.addEventListener('keydown', e => {
 function setTool(tool) {
     const prev = currentTool;
     currentTool = tool;
-    if (tool !== 'ruler') { rulerStart=null; rulerEnd=null; }
+    if (tool !== 'ruler' && tool !== 'cone') { rulerStart=null; rulerEnd=null; }
     if (tool !== 'draw-line') { drawingStart=null; drawingEnd=null; }
     updateToolButtonsState();
     if (prev !== tool) drawCanvas();
     canvas.className = '';
-    canvas.classList.add(tool === 'ruler' || tool === 'draw-line' || tool === 'eraser' ? 'cur-crosshair' : 'cur-grab');
+    canvas.classList.add(
+        tool === 'ruler' || tool === 'cone' || tool === 'draw-line' || tool === 'eraser'
+            ? 'cur-crosshair' : 'cur-grab'
+    );
 }
 
 function updateToolButtonsState() {
-    [moveToolBtn, rulerBtn, drawLineBtn, eraserBtn].forEach(b => b.classList.remove('active-tool'));
-    const map = { move:moveToolBtn, ruler:rulerBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
+    [moveToolBtn, rulerBtn, coneBtn, drawLineBtn, eraserBtn].forEach(b => b?.classList.remove('active-tool'));
+    const map = { move:moveToolBtn, ruler:rulerBtn, cone:coneBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
     if (map[currentTool]) map[currentTool].classList.add('active-tool');
 }
 
@@ -2080,16 +2299,12 @@ toggleNpcDetailBtn.addEventListener('click', () => {
     setTimeout(resizeCanvasAndDraw, 270);
 });
 
-toggleMapTitleBtn.addEventListener('click', () => {
-    mapTitleOverlay.classList.toggle('collapsed');
-    toggleMapTitleBtn.innerHTML = mapTitleOverlay.classList.contains('collapsed') ? '▼' : '▲';
-});
-
 // ============================================================
 //   TOOL BUTTON LISTENERS
 // ============================================================
 moveToolBtn.addEventListener('click', () => setTool('move'));
 rulerBtn.addEventListener('click', () => setTool(currentTool === 'ruler' ? 'move' : 'ruler'));
+coneBtn.addEventListener('click', () => setTool(currentTool === 'cone' ? 'move' : 'cone'));
 drawLineBtn.addEventListener('click', () => setTool(currentTool === 'draw-line' ? 'move' : 'draw-line'));
 eraserBtn.addEventListener('click', () => setTool(currentTool === 'eraser' ? 'move' : 'eraser'));
 drawColorInput.addEventListener('input', e => { drawColor = e.target.value; });
@@ -2099,7 +2314,86 @@ zoomInBtn.addEventListener('click', () => applyZoom(ZOOM_FACTOR, canvas.width/2,
 zoomOutBtn.addEventListener('click', () => applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2));
 resetViewBtn.addEventListener('click', () => { zoomLevel=1.0; panX=0; panY=0; resizeCanvasAndDraw(); });
 
-clearCanvasBtn.addEventListener('click', () => {
+// Unit quick-select in toolbar
+unitQuickSelect.addEventListener('change', e => {
+    const sys = e.target.value;
+    mapSettings.unitSystem = sys;
+    // Auto-set sensible defaults
+    if (sys === 'feet' && mapSettings.scalePerSquare === 1.5) mapSettings.scalePerSquare = 5;
+    if (sys === 'meters' && mapSettings.scalePerSquare === 5) mapSettings.scalePerSquare = 1.5;
+    saveStateToStorage();
+    drawCanvas();
+    broadcast({ type:'map_settings_update', mapSettings: (({ backgroundImage:_b, ...s }) => s)(mapSettings) });
+});
+
+// ── Save dropdown ─────────────────────────────────────────
+saveDropdownBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    saveDropdown.classList.toggle('open');
+});
+D.addEventListener('click', () => saveDropdown.classList.remove('open'));
+
+function doSaveJson() {
+    autoSaveCurrentNpc();
+    const data = { version:3, mapSettings, npcs, tokens:tokens.map(t=>({...t,imageObj:null})), drawings, initiativeOrder, currentTurnIndex };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const a = D.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${mapSettings.name.replace(/\s+/g,'_')}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    // Update last-saved UI
+    lastSavedTime = new Date();
+    saveLastSavedTime.textContent = lastSavedTime.toLocaleTimeString();
+    saveLastSavedRow.style.display = 'block';
+    showFeedback('💾 Mapa salvo!', 'success');
+    saveDropdown.classList.remove('open');
+}
+
+saveMapFileBtn.addEventListener('click', doSaveJson);
+
+// Ctrl+S shortcut
+D.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        doSaveJson();
+    }
+});
+
+// Export as PNG
+saveMapPngBtn.addEventListener('click', () => {
+    saveDropdown.classList.remove('open');
+    // Render to a temp offscreen canvas at current pan/zoom
+    const tmpCanvas = D.createElement('canvas');
+    tmpCanvas.width  = canvas.width;
+    tmpCanvas.height = canvas.height;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.drawImage(canvas, 0, 0);
+    tmpCanvas.toBlob(blob => {
+        const a = D.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${mapSettings.name.replace(/\s+/g,'_')}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        showFeedback('🖼️ Imagem exportada!', 'success');
+    }, 'image/png');
+});
+
+// Clear from save dropdown
+clearMapFromSaveBtn.addEventListener('click', () => {
+    saveDropdown.classList.remove('open');
+    showCustomConfirm('Limpar todo o mapa (tokens e desenhos)?', confirmed => {
+        if (confirmed) {
+            saveToUndo(); tokens=[]; drawings=[]; selectedToken=null;
+            saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+            showFeedback('Mapa limpo!','success');
+            broadcast({ type:'map_clear' });
+        }
+        hideCustomConfirm();
+    });
+});
+
+clearCanvasBtn?.addEventListener('click', () => {
     showCustomConfirm('Limpar todo o mapa (tokens e desenhos)?', confirmed => {
         if (confirmed) {
             saveToUndo(); tokens=[]; drawings=[]; selectedToken=null;
@@ -2236,14 +2530,28 @@ clearInitiativeBtn.addEventListener('click', () => {
 // ============================================================
 //   MAP SETTINGS
 // ============================================================
+
+// Live preview: scale text below the cone angle slider
+function updateScalePreview() {
+    const sys   = unitSystemInput.value;
+    const scale = parseFloat(scalePerSquareInput.value) || 1;
+    const unit  = sys === 'meters' ? 'm' : sys === 'feet' ? 'ft' : 'quad.';
+    const sprint = (6 * scale).toFixed(1); // 6 squares = D&D sprint
+    scalePreviewText.textContent = `1 quadrado = ${scale} ${unit}  |  Corrida: ${sprint} ${unit} / turno`;
+}
+
 mapSettingsBtn.addEventListener('click', () => {
-    mapNameInput.value = mapSettings.name;
-    unitInput.value = mapSettings.unit;
-    gridColsInput.value = mapSettings.gridCols;
-    gridRowsInput.value = mapSettings.gridRows;
-    cellSizeInput.value = mapSettings.cellSize || 40;
-    gridColorInput.value = mapSettings.gridColor || '#4b5563';
-    showGridLabelsInput.checked = mapSettings.showGridLabels !== false;
+    mapNameInput.value               = mapSettings.name;
+    gridColsInput.value              = mapSettings.gridCols;
+    gridRowsInput.value              = mapSettings.gridRows;
+    cellSizeInput.value              = mapSettings.cellSize || 40;
+    gridColorInput.value             = mapSettings.gridColor || '#4b5563';
+    showGridLabelsInput.checked      = mapSettings.showGridLabels !== false;
+    unitSystemInput.value            = mapSettings.unitSystem || 'squares';
+    scalePerSquareInput.value        = mapSettings.scalePerSquare ?? 1.5;
+    coneAngleInput.value             = mapSettings.coneAngle || 60;
+    coneAngleLabel.textContent       = `${mapSettings.coneAngle || 60}°`;
+    updateScalePreview();
     if (mapSettings.backgroundImage) {
         mapBackgroundPreview.src = mapSettings.backgroundImage;
         mapBackgroundPreviewContainer.classList.remove('hidden');
@@ -2252,6 +2560,42 @@ mapSettingsBtn.addEventListener('click', () => {
     }
     mapSettingsModal.classList.remove('hidden');
 });
+
+// Live update of cone angle label and scale preview
+coneAngleInput.addEventListener('input', () => {
+    coneAngleLabel.textContent = `${coneAngleInput.value}°`;
+});
+scalePerSquareInput.addEventListener('input', updateScalePreview);
+unitSystemInput.addEventListener('change', updateScalePreview);
+
+saveMapSettingsBtn.addEventListener('click', () => {
+    mapSettings.name            = mapNameInput.value || 'Mapa';
+    mapSettings.gridCols        = Math.max(5,  Math.min(100, parseInt(gridColsInput.value)||20));
+    mapSettings.gridRows        = Math.max(5,  Math.min(100, parseInt(gridRowsInput.value)||15));
+    mapSettings.cellSize        = Math.max(20, Math.min(120, parseInt(cellSizeInput.value)||40));
+    mapSettings.gridColor       = gridColorInput.value;
+    mapSettings.showGridLabels  = showGridLabelsInput.checked;
+    mapSettings.unitSystem      = unitSystemInput.value;
+    mapSettings.scalePerSquare  = parseFloat(scalePerSquareInput.value) || 1.5;
+    mapSettings.coneAngle       = parseInt(coneAngleInput.value) || 60;
+    // Derive legacy `unit` string for ruler labels
+    mapSettings.unit = mapSettings.unitSystem === 'meters' ? 'm'
+                     : mapSettings.unitSystem === 'feet'   ? 'ft'
+                     : 'quad.';
+
+    mapNameDisplay.textContent = mapSettings.name;
+    // Sync quick-select toolbar
+    unitQuickSelect.value = mapSettings.unitSystem;
+    rulerConeAngle = mapSettings.coneAngle;
+
+    saveStateToStorage();
+    mapSettingsModal.classList.add('hidden');
+    resizeCanvasAndDraw();
+    showFeedback('Configurações salvas!', 'success');
+    const { backgroundImage:_bg, ...settingsClean } = mapSettings;
+    broadcast({ type:'map_settings_update', mapSettings: settingsClean });
+});
+cancelMapSettingsBtn.addEventListener('click', () => mapSettingsModal.classList.add('hidden'));
 
 uploadMapBackgroundBtn.addEventListener('click', () => mapBackgroundInput.click());
 mapBackgroundInput.addEventListener('change', e => {
@@ -2263,54 +2607,22 @@ mapBackgroundInput.addEventListener('change', e => {
         mapBackgroundPreview.src = base64;
         mapBackgroundPreviewContainer.classList.remove('hidden');
         loadMapBackground().then(() => drawCanvas());
-        // Passo 3: send background as chunks (can be large)
         broadcastMapBackgroundChunks(base64);
     };
     reader.readAsDataURL(e.target.files[0]);
-    e.target.value='';
+    e.target.value = '';
 });
 
 removeMapBackgroundBtn.addEventListener('click', () => {
-    mapSettings.backgroundImage=''; mapBackgroundImgObj=null;
-    mapBackgroundPreview.src=''; mapBackgroundPreviewContainer.classList.add('hidden');
+    mapSettings.backgroundImage = ''; mapBackgroundImgObj = null;
+    mapBackgroundPreview.src = ''; mapBackgroundPreviewContainer.classList.add('hidden');
     drawCanvas();
     broadcast({ type:'map_background_clear' });
 });
 
-saveMapSettingsBtn.addEventListener('click', () => {
-    mapSettings.name = mapNameInput.value || 'Mapa';
-    mapSettings.unit = unitInput.value || 'quadrados';
-    mapSettings.gridCols = Math.max(5, Math.min(100, parseInt(gridColsInput.value)||20));
-    mapSettings.gridRows = Math.max(5, Math.min(100, parseInt(gridRowsInput.value)||15));
-    mapSettings.cellSize = Math.max(20, Math.min(120, parseInt(cellSizeInput.value)||40));
-    mapSettings.gridColor = gridColorInput.value;
-    mapSettings.showGridLabels = showGridLabelsInput.checked;
-    mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
-    saveStateToStorage();
-    mapSettingsModal.classList.add('hidden');
-    resizeCanvasAndDraw();
-    showFeedback('Configurações salvas!','success');
-    // Passo 3: broadcast settings (no image — that travels separately)
-    const { backgroundImage: _bg, ...settingsWithoutBg } = mapSettings;
-    broadcast({ type:'map_settings_update', mapSettings: settingsWithoutBg });
-});
-cancelMapSettingsBtn.addEventListener('click', () => mapSettingsModal.classList.add('hidden'));
-
 // ============================================================
 //   SAVE/LOAD MAP FILE
 // ============================================================
-saveMapFileBtn.addEventListener('click', () => {
-    autoSaveCurrentNpc();
-    const data = { version:2, mapSettings, npcs, tokens:tokens.map(t=>({...t,imageObj:null})), drawings, initiativeOrder, currentTurnIndex };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
-    const a = D.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${mapSettings.name.replace(/\s+/g,'_')}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    showFeedback('Mapa salvo!','success');
-});
-
 loadMapFileBtn.addEventListener('click', () => loadMapInput.click());
 loadMapInput.addEventListener('change', loadMapFromFile);
 mainLoadMapInput.addEventListener('change', loadMapFromFile);
@@ -2323,13 +2635,20 @@ async function loadMapFromFile(e) {
     reader.onload = async ev => {
         try {
             const data = JSON.parse(ev.target.result);
-            mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...(data.mapSettings||{}) };
+            mapSettings = {
+                gridColor:'#4b5563', showGridLabels:true, cellSize:40,
+                unitSystem:'squares', scalePerSquare:1.5, coneAngle:60,
+                unit:'quad.',
+                ...(data.mapSettings||{})
+            };
+            rulerConeAngle = mapSettings.coneAngle || 60;
             npcs = data.npcs || {};
             drawings = data.drawings || [];
             initiativeOrder = data.initiativeOrder || [];
             currentTurnIndex = data.currentTurnIndex || 0;
             tokens = (data.tokens||[]).map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
             saveStateToStorage();
+            saveDropdown.classList.remove('open');
             await showMapApplication(false);
             showFeedback('Mapa carregado!','success');
         } catch(err) {
@@ -2443,7 +2762,7 @@ function handleRemoteMessage(raw, sourceConn) {
                 drawings         = msg.drawings        || [];
                 initiativeOrder  = msg.initiativeOrder || [];
                 currentTurnIndex = msg.currentTurnIndex || 0;
-                mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+                mapNameDisplay.textContent = mapSettings.name;
                 reloadTokenImages().then(() => {
                     resizeCanvasAndDraw(); renderNpcList(); renderInitiative();
                 });
@@ -2510,7 +2829,7 @@ function handleRemoteMessage(raw, sourceConn) {
             case 'map_settings_update': {
                 const { backgroundImage:_b, ...inc } = msg.mapSettings || {};
                 mapSettings = { ...mapSettings, ...inc };
-                mapNameDisplay.textContent = `Mapa: ${mapSettings.name}`;
+                mapNameDisplay.textContent = mapSettings.name;
                 saveStateToStorage(); resizeCanvasAndDraw();
                 showFeedback('Configurações do mapa atualizadas.', 'info');
                 break;
