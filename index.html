@@ -119,34 +119,35 @@
             top: 0; left: 0;
             height: 100vh;
             width: var(--sidebar-w);
-            background-color: var(--bg-mid);
-            border-right: 1px solid var(--border);
+            background: linear-gradient(180deg, #16202e 0%, #1a2535 100%);
+            border-right: 1px solid rgba(59,130,246,0.12);
             overflow: hidden;
             z-index: 100;
             transform: translateX(0);
-            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
             display: flex;
             flex-direction: column;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.3);
         }
-        .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+        .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); box-shadow: none; }
         .sidebar-header {
             padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             display: flex;
             align-items: center;
             gap: 0.5rem;
             flex-shrink: 0;
-            background: var(--bg-darkest);
+            background: rgba(0,0,0,0.25);
         }
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
-            padding: 0.75rem;
+            padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: var(--border-light) transparent;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
-        .sidebar-body::-webkit-scrollbar { width: 4px; }
-        .sidebar-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+        .sidebar-body::-webkit-scrollbar { width: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
         /* === RIGHT PANEL === */
         #npcDetailPanel {
@@ -154,34 +155,35 @@
             top: 0; right: 0;
             height: 100vh;
             width: var(--sidebar-w);
-            background-color: var(--bg-mid);
-            border-left: 1px solid var(--border);
+            background: linear-gradient(180deg, #16202e 0%, #1a2535 100%);
+            border-left: 1px solid rgba(59,130,246,0.12);
             overflow: hidden;
             z-index: 100;
             transform: translateX(0);
-            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
             display: flex;
             flex-direction: column;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.3);
         }
-        #npcDetailPanel.collapsed { transform: translateX(var(--sidebar-w)); }
+        #npcDetailPanel.collapsed { transform: translateX(var(--sidebar-w)); box-shadow: none; }
         .panel-header {
             padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             display: flex;
             align-items: center;
             gap: 0.5rem;
             flex-shrink: 0;
-            background: var(--bg-darkest);
+            background: rgba(0,0,0,0.25);
         }
         .panel-body {
             flex: 1;
             overflow-y: auto;
-            padding: 0.75rem;
+            padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: var(--border-light) transparent;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
-        .panel-body::-webkit-scrollbar { width: 4px; }
-        .panel-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+        .panel-body::-webkit-scrollbar { width: 3px; }
+        .panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
         /* === CANVAS AREA === */
         .central-content {
@@ -199,7 +201,7 @@
             overflow: hidden;
         }
         #gameCanvas {
-            background-color: #0a0f18;
+            background: radial-gradient(ellipse at 50% 60%, #0d1520 0%, #070c14 100%);
             display: block;
             cursor: default;
         }
@@ -212,19 +214,22 @@
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            background-color: var(--bg-mid);
-            border: 1px solid var(--border-light);
-            color: var(--text-secondary);
-            width: 1.5rem;
-            height: 3rem;
+            background: rgba(13,17,23,0.85);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            width: 1.375rem;
+            height: 4rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             cursor: pointer;
-            transition: background-color 0.15s, left 0.25s cubic-bezier(0.4,0,0.2,1), right 0.25s cubic-bezier(0.4,0,0.2,1);
+            transition: background 0.15s, color 0.15s,
+                        left 0.28s cubic-bezier(0.4,0,0.2,1),
+                        right 0.28s cubic-bezier(0.4,0,0.2,1),
+                        border-color 0.15s;
             z-index: 101;
-            border: 1px solid var(--border-light);
         }
         #toggleNpcListBtn {
             left: var(--sidebar-w);
@@ -236,41 +241,45 @@
             border-radius: 0.5rem 0 0 0.5rem;
             border-right: none;
         }
-        .toggle-sidebar-btn:hover { background-color: var(--accent); color: white; border-color: var(--accent); }
+        .toggle-sidebar-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
 
         /* === MAP CONTROLS OVERLAY === */
         .map-controls-overlay {
             position: absolute;
-            bottom: 1rem;
+            bottom: 1.25rem;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             flex-wrap: wrap;
-            gap: 0.4rem;
-            background-color: rgba(13,17,23,0.92);
-            backdrop-filter: blur(8px);
-            padding: 0.6rem 0.8rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
+            gap: 0.3rem;
+            background: rgba(8,12,22,0.92);
+            backdrop-filter: blur(12px);
+            padding: 0.5rem 0.75rem;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(255,255,255,0.07);
             z-index: 10;
             align-items: center;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.06);
         }
         .controls-divider {
             width: 1px;
-            height: 1.75rem;
-            background: var(--border-light);
-            margin: 0 0.2rem;
+            height: 1.5rem;
+            background: rgba(255,255,255,0.08);
+            margin: 0 0.15rem;
         }
 
         /* === HEADER BUTTONS === */
         .header-action-buttons {
             position: fixed;
             top: 0.6rem;
-            right: 1rem;
+            right: 0.875rem;
             display: flex;
             flex-direction: row;
-            gap: 0.35rem;
+            gap: 0.3rem;
             z-index: 100;
             align-items: center;
         }
@@ -282,45 +291,47 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            background-color: rgba(13,17,23,0.82);
-            backdrop-filter: blur(8px);
-            padding: 0.3rem 0.875rem;
+            background: rgba(8,12,22,0.88);
+            backdrop-filter: blur(10px);
+            padding: 0.28rem 1rem;
             border-radius: 9999px;
-            border: 1px solid var(--border);
-            font-size: 0.8125rem;
+            border: 1px solid rgba(255,255,255,0.07);
+            font-size: 0.79rem;
             font-weight: 600;
             color: var(--text-muted);
             white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            cursor: default;
-            transition: color 0.2s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+            letter-spacing: 0.01em;
+            transition: color 0.2s, border-color 0.2s;
+            pointer-events: none;
         }
-        #mapNamePill:hover { color: var(--text-primary); }
 
         /* === SAVE DROPDOWN === */
-        .save-dropdown-wrap {
-            position: relative;
-        }
+        .save-dropdown-wrap { position: relative; }
         #saveDropdown {
             position: absolute;
             top: calc(100% + 0.4rem);
             right: 0;
-            background: rgba(13,17,23,0.97);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-light);
-            border-radius: 0.625rem;
-            min-width: 180px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            background: rgba(10,15,26,0.98);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0.75rem;
+            min-width: 190px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.05);
             z-index: 200;
             overflow: hidden;
             display: none;
         }
-        #saveDropdown.open { display: block; }
+        #saveDropdown.open { display: block; animation: fadeInDown 0.12s ease; }
+        @keyframes fadeInDown {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
         .save-dropdown-item {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.55rem 0.875rem;
+            padding: 0.575rem 0.875rem;
             font-size: 0.8125rem;
             color: var(--text-secondary);
             cursor: pointer;
@@ -328,20 +339,87 @@
             border: none;
             width: 100%;
             text-align: left;
-            transition: background 0.12s, color 0.12s;
+            transition: background 0.1s, color 0.1s;
         }
-        .save-dropdown-item:hover { background: var(--bg-light); color: var(--text-primary); }
-        .save-dropdown-item.danger:hover { background: rgba(220,38,38,0.15); color: var(--danger); }
-        .save-dropdown-sep { height: 1px; background: var(--border); margin: 0.2rem 0; }
+        .save-dropdown-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .save-dropdown-item.danger:hover { background: rgba(220,38,38,0.12); color: var(--danger); }
+        .save-dropdown-sep { height: 1px; background: rgba(255,255,255,0.05); margin: 0.2rem 0; }
         .save-last-saved {
-            padding: 0.35rem 0.875rem 0.5rem;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
+            padding: 0.35rem 0.875rem 0.55rem;
+            font-size: 0.69rem;
+            color: rgba(156,163,175,0.6);
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
 
         /* === CONE RULER === */
         .ruler-mode-btn.active-mode { background: rgba(250,204,21,0.2); border-color: #fde68a; color: #fde68a; }
+
+        /* === FOG OF WAR === */
+        .btn-fow {
+            background: linear-gradient(135deg, rgba(109,40,217,0.85), rgba(55,20,130,0.9));
+            border: 1px solid rgba(167,139,250,0.4);
+            color: #c4b5fd;
+            position: relative;
+        }
+        .btn-fow:hover { background: linear-gradient(135deg,rgba(124,58,237,0.9),rgba(67,25,160,0.95)); box-shadow: 0 2px 10px rgba(139,92,246,0.4); }
+        .btn-fow.fow-active {
+            background: linear-gradient(135deg, rgba(139,92,246,1), rgba(109,40,217,1));
+            box-shadow: 0 0 0 2px #c4b5fd, 0 0 12px rgba(139,92,246,0.5);
+            color: #fff;
+        }
+        .btn-fow.fow-active::after {
+            content: '';
+            position: absolute;
+            top: -3px; right: -3px;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #a78bfa;
+            box-shadow: 0 0 6px #a78bfa;
+            animation: fowPulse 1.8s infinite;
+        }
+        @keyframes fowPulse {
+            0%,100% { opacity:1; transform:scale(1); }
+            50% { opacity:0.4; transform:scale(0.7); }
+        }
+        .btn-gm-reveal {
+            background: rgba(245,158,11,0.2);
+            border: 1px solid rgba(245,158,11,0.4);
+            color: #fbbf24;
+        }
+        .btn-gm-reveal:hover { background: rgba(245,158,11,0.3); box-shadow:0 2px 8px rgba(245,158,11,0.3); }
+        .btn-gm-reveal.gm-hidden {
+            background: rgba(16,185,129,0.2);
+            border-color: rgba(16,185,129,0.4);
+            color: #34d399;
+        }
+        #fowVisionSliderWrap {
+            display: none;
+            align-items: center;
+            gap: 0.35rem;
+            animation: fadeIn 0.15s ease;
+        }
+        #fowVisionSliderWrap.visible { display: flex; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+        .fow-badge {
+            position: fixed;
+            top: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(109,40,217,0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(167,139,250,0.5);
+            border-radius: 9999px;
+            padding: 0.2rem 0.85rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #e9d5ff;
+            z-index: 99;
+            letter-spacing: 0.06em;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 2px 12px rgba(109,40,217,0.4);
+        }
+        .fow-badge.visible { display: block; }
 
         /* === FEEDBACK === */
         .feedback-message {
@@ -349,41 +427,42 @@
             top: 1rem;
             left: 50%;
             transform: translateX(-50%);
-            padding: 0.6rem 1.25rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
+            padding: 0.55rem 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.8125rem;
             font-weight: 600;
             text-align: center;
             z-index: 2000;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-            backdrop-filter: blur(8px);
-            animation: slideDown 0.2s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            animation: slideDown 0.18s ease;
+            letter-spacing: 0.01em;
         }
         @keyframes slideDown {
-            from { transform: translateX(-50%) translateY(-10px); opacity:0; }
+            from { transform: translateX(-50%) translateY(-8px); opacity:0; }
             to { transform: translateX(-50%) translateY(0); opacity:1; }
         }
-        .feedback-success { background-color: rgba(16,185,129,0.95); color: white; }
-        .feedback-error { background-color: rgba(220,38,38,0.95); color: white; }
-        .feedback-info { background-color: rgba(59,130,246,0.95); color: white; }
+        .feedback-success { background: rgba(16,185,129,0.95); color: white; }
+        .feedback-error   { background: rgba(220,38,38,0.95);  color: white; }
+        .feedback-info    { background: rgba(59,130,246,0.95);  color: white; }
 
         /* === MODAL === */
         .custom-modal-overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
-            background-color: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.8);
             display: flex; align-items:center; justify-content:center;
             z-index: 1000;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
         .custom-modal-content {
-            background-color: var(--bg-mid);
+            background: linear-gradient(160deg, #16202e 0%, #111a28 100%);
             padding: 1.75rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border-radius: 1.125rem;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
             max-width: 480px;
             width: 90%;
             color: var(--text-secondary);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255,255,255,0.07);
         }
         .custom-modal-buttons { display:flex; justify-content:center; gap:0.75rem; margin-top:1.5rem; }
 
@@ -391,22 +470,23 @@
         #mainScreen {
             display: flex; flex-direction:column; align-items:center; justify-content:center;
             height:100%; width:100%;
-            background: radial-gradient(ellipse at center, #1a2744 0%, #0d1117 70%);
+            background: radial-gradient(ellipse at 50% 40%, #0f1e38 0%, #070c14 70%);
             text-align:center; z-index:200;
         }
         #mainScreen.hidden { display:none; }
         .main-card {
-            background-color: rgba(31,41,55,0.9);
+            background: linear-gradient(160deg, rgba(22,32,46,0.95) 0%, rgba(18,26,40,0.95) 100%);
             padding: 3rem;
             border-radius: 1.5rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(59,130,246,0.1);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 80px rgba(59,130,246,0.08);
             display: flex; flex-direction:column; gap:1.25rem; align-items:center;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255,255,255,0.07);
             backdrop-filter: blur(20px);
         }
-        .main-card h1 { font-size:3rem; font-weight:900; color:white; margin-bottom:0.5rem; text-shadow: 0 0 40px rgba(59,130,246,0.4); }
-        .main-card p { font-size:1.1rem; color:var(--text-muted); margin-bottom:1rem; }
-        .main-card .btn { width:260px; padding:0.875rem 2rem; font-size:1rem; border-radius:0.75rem; justify-content:center; }
+        .main-card h1 { font-size:2.75rem; font-weight:900; color:white; margin-bottom:0.5rem;
+            text-shadow: 0 0 40px rgba(59,130,246,0.35); letter-spacing:-0.02em; }
+        .main-card p { font-size:1rem; color:var(--text-muted); margin-bottom:1rem; }
+        .main-card .btn { width:260px; padding:0.875rem 2rem; font-size:1rem; border-radius:0.875rem; justify-content:center; }
 
         /* === MAP APP === */
         #mapApplication { width:100%; height:100%; display:flex; flex-direction:row; overflow:hidden; }
@@ -417,15 +497,16 @@
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.5rem;
+            padding: 0.45rem 0.5rem;
             border-radius: 0.5rem;
-            margin-bottom: 0.4rem;
-            background-color: var(--bg-light);
+            margin-bottom: 0.3rem;
+            background: rgba(255,255,255,0.03);
             border: 1px solid transparent;
-            transition: border-color 0.15s, background-color 0.15s;
+            transition: border-color 0.15s, background 0.15s;
+            cursor: pointer;
         }
-        .npc-list-item:hover { border-color: var(--border-light); }
-        .npc-list-item.selected { border-color: var(--accent); background-color: rgba(59,130,246,0.1); }
+        .npc-list-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+        .npc-list-item.selected { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.08); }
         .npc-name-btn {
             flex: 1;
             text-align: left;
@@ -441,40 +522,44 @@
             padding: 0;
         }
         .npc-tag {
-            font-size: 0.625rem;
+            font-size: 0.6rem;
             font-weight: 700;
-            padding: 0.125rem 0.375rem;
+            padding: 0.1rem 0.35rem;
             border-radius: 9999px;
             flex-shrink: 0;
             cursor: pointer;
+            letter-spacing: 0.04em;
         }
-        .npc-tag.enemy { background-color: rgba(239,68,68,0.2); color: var(--enemy); border: 1px solid rgba(239,68,68,0.4); }
-        .npc-tag.ally { background-color: rgba(16,185,129,0.2); color: var(--ally); border: 1px solid rgba(16,185,129,0.4); }
+        .npc-tag.enemy { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .npc-tag.ally  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
 
         /* === INITIATIVE ITEM === */
         .initiative-item {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.375rem 0.5rem;
+            padding: 0.35rem 0.5rem;
             border-radius: 0.375rem;
-            margin-bottom: 0.25rem;
-            font-size: 0.8125rem;
+            margin-bottom: 0.2rem;
+            font-size: 0.8rem;
             border: 1px solid transparent;
+            transition: background 0.12s;
         }
+        .initiative-item:hover { background: rgba(255,255,255,0.04); }
         .initiative-item.active {
-            background-color: rgba(59,130,246,0.2);
-            border-color: var(--accent);
+            background: rgba(59,130,246,0.12);
+            border-color: rgba(59,130,246,0.3);
         }
         .initiative-order {
             width: 1.5rem;
             height: 1.5rem;
             border-radius: 50%;
-            background: var(--bg-light);
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6875rem;
+            font-size: 0.65rem;
             font-weight: 700;
             flex-shrink: 0;
             color: white;
@@ -483,40 +568,62 @@
         /* === COORD DISPLAY === */
         #coordDisplay {
             position: absolute;
-            bottom: 5.5rem;
+            bottom: 5.75rem;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.75);
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 0.375rem;
+            background: rgba(0,0,0,0.65);
+            color: rgba(156,163,175,0.8);
+            font-size: 0.7rem;
+            padding: 0.175rem 0.55rem;
+            border-radius: 9999px;
             pointer-events: none;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
             display: none;
+            letter-spacing: 0.05em;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         /* === ZOOM DISPLAY === */
         #zoomDisplay {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             font-family: monospace;
-            min-width: 3rem;
+            min-width: 2.75rem;
             text-align: center;
+            font-weight: 600;
         }
 
         /* === FIELD LABELS === */
         .field-label {
             display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: rgba(156,163,175,0.7);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.375rem;
+            letter-spacing: 0.07em;
+            margin-bottom: 0.35rem;
         }
-        .field-group { margin-bottom: 0.875rem; }
-        .section-divider { border: none; border-top: 1px solid var(--border); margin: 0.75rem 0; }
+        .field-group { margin-bottom: 0.8rem; }
+        .section-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 0.75rem 0; }
+
+        /* === INPUTS (refined) === */
+        .input-base, .textarea-base, .select-base {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            padding: 0.45rem 0.7rem;
+            width: 100%;
+            font-size: 0.8375rem;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+        .input-base:focus, .textarea-base:focus, .select-base:focus {
+            outline: none;
+            border-color: rgba(59,130,246,0.5);
+            background: rgba(59,130,246,0.06);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
 
         /* === TOOLTIPS === */
         [data-tip] { position: relative; }
@@ -526,11 +633,11 @@
             bottom: calc(100% + 6px);
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.92);
             color: white;
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0.55rem;
             border-radius: 0.375rem;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             white-space: nowrap;
             pointer-events: none;
             opacity: 0;
@@ -800,6 +907,9 @@
     <span id="peerRoleText" style="color:var(--accent);">Mestre</span>
 </div>
 
+<!-- FoW active badge -->
+<div id="fowBadge" class="fow-badge">👁️ NÉVOA ATIVA</div>
+
 <!-- ===== MAP APPLICATION ===== -->
 <div id="mapApplication" class="hidden">
 
@@ -807,23 +917,23 @@
     <aside id="npcSidebar" class="sidebar">
         <div class="sidebar-header">
             <button id="backToMainBtn" class="btn btn-ghost btn-sm">← Voltar</button>
-            <span class="title-font text-sm font-bold text-white ml-auto">NPCs</span>
+            <span class="title-font text-sm font-bold text-white" style="margin-left:auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
         </div>
         <div class="sidebar-body">
-            <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;">+ Novo NPC</button>
+            <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;background:linear-gradient(135deg,rgba(59,130,246,0.8),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 12px rgba(59,130,246,0.2);">＋ Novo NPC</button>
             <div id="npcList"></div>
         </div>
 
         <!-- Initiative Tracker -->
-        <div style="border-top:1px solid var(--border);padding:0.75rem;flex-shrink:0;">
+        <div style="border-top:1px solid rgba(255,255,255,0.05);padding:0.75rem;flex-shrink:0;background:rgba(0,0,0,0.15);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">⚡ Iniciativa</span>
-                <button id="addInitiativeBtn" class="btn btn-sm" style="padding:0.2rem 0.5rem;">+</button>
+                <span style="font-size:0.7rem;font-weight:700;color:rgba(156,163,175,0.6);text-transform:uppercase;letter-spacing:0.07em;">⚡ Iniciativa</span>
+                <button id="addInitiativeBtn" class="btn btn-sm" style="padding:0.15rem 0.5rem;font-size:0.75rem;">+</button>
             </div>
             <div id="initiativeList" style="max-height:180px;overflow-y:auto;"></div>
-            <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
-                <button id="nextTurnBtn" class="btn btn-sm" style="flex:1;justify-content:center;">▶ Próximo</button>
-                <button id="clearInitiativeBtn" class="btn btn-ghost btn-sm btn-icon" data-tip="Limpar">🗑</button>
+            <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">
+                <button id="nextTurnBtn" class="btn btn-sm" style="flex:1;justify-content:center;font-size:0.75rem;">▶ Próximo</button>
+                <button id="clearInitiativeBtn" class="btn btn-ghost btn-sm btn-icon" data-tip="Limpar Iniciativa" style="font-size:0.75rem;">🗑</button>
             </div>
         </div>
     </aside>
@@ -915,6 +1025,19 @@
                 <!-- Danger actions -->
                 <button id="clearCanvasBtn" class="btn btn-danger btn-sm" data-tip="Limpar Mapa">🗑 Mapa</button>
                 <button id="clearDrawingsBtn" class="btn btn-danger btn-icon" data-tip="Limpar Desenhos">✂</button>
+
+                <div class="controls-divider"></div>
+
+                <!-- Fog of War -->
+                <button id="fowToggleBtn" class="btn btn-icon btn-fow" data-tip="Névoa de Guerra (F)" title="Névoa de Guerra">👁️</button>
+                <button id="fowGmRevealBtn" class="btn btn-sm btn-gm-reveal hidden" title="GM vê tudo / Visão jogador">👓 GM</button>
+                <button id="fowClearBtn" class="btn btn-ghost btn-sm hidden" title="Limpar células exploradas" style="font-size:0.7rem;">🌫 Reset</button>
+                <div id="fowVisionSliderWrap">
+                    <span style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap;">👁 Raio:</span>
+                    <input type="range" id="fowVisionSlider" min="1" max="20" value="6"
+                        style="width:64px;accent-color:#8b5cf6;">
+                    <span id="fowVisionLabel" style="font-size:0.7rem;color:#c4b5fd;min-width:1.5rem;">6</span>
+                </div>
             </div>
         </div>
 
@@ -924,12 +1047,14 @@
     <!-- RIGHT PANEL -->
     <div id="npcDetailPanel">
         <div class="panel-header">
-            <span class="title-font text-sm font-bold text-white">Detalhes do NPC</span>
+            <div>
+                <span class="title-font text-sm font-bold text-white" style="letter-spacing:0.05em;opacity:0.9;">Ficha do NPC</span>
+            </div>
         </div>
         <div class="panel-body">
-            <div id="npcEmptyState" style="text-align:center;padding:2rem 1rem;color:var(--text-muted);">
-                <p style="font-size:2rem;margin-bottom:0.5rem;">👤</p>
-                <p style="font-size:0.875rem;">Selecione ou crie um NPC para editar seus detalhes.</p>
+            <div id="npcEmptyState" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
+                <p style="font-size:2rem;margin-bottom:0.75rem;opacity:0.4;">👤</p>
+                <p style="font-size:0.8125rem;line-height:1.5;opacity:0.6;">Selecione um NPC na lista<br>ou crie um novo para começar.</p>
             </div>
             <div id="npcFormContent" class="hidden">
                 <div class="field-group">
@@ -972,6 +1097,10 @@
                         <label class="field-label" for="tokenHeightInput">Altura Token</label>
                         <input type="number" id="tokenHeightInput" class="input-base" min="1" max="10" value="1">
                     </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcVisionRadius">👁️ Raio de Visão (quadrados)</label>
+                    <input type="number" id="npcVisionRadius" class="input-base" min="0" max="30" value="6" placeholder="0 = sem visão própria">
                 </div>
                 <div class="field-group">
                     <label class="field-label">Imagem do Token</label>
@@ -1182,6 +1311,7 @@ const npcDescriptionTextarea = $('npcDescription');
 const npcStatsTextarea = $('npcStats');
 const tokenWidthInput = $('tokenWidthInput');
 const tokenHeightInput = $('tokenHeightInput');
+const npcVisionRadiusInput = $('npcVisionRadius');
 const saveNpcBtn = $('saveNpcBtn');
 const addTokenBtn = $('addTokenBtn');
 const addToInitiativeBtn = $('addToInitiativeBtn');
@@ -1302,6 +1432,18 @@ let currentTurnIndex = 0;
 let hpEditToken = null;
 let feedbackTimer = null;
 let lastSavedTime = null;      // for save UI timestamp
+
+// ============================================================
+//   FOG OF WAR STATE
+// ============================================================
+let fowEnabled = false;        // FoW ligado/desligado
+let fowGmReveal = true;        // GM vê tudo (com neblina suave) vs visão jogador
+let fowDefaultRadius = 6;      // raio global (slider)
+// explored[col][row] = true  → célula já foi vista (meia-névoa)
+let fowExplored = {};
+// Offscreen canvas para a camada de névoa
+let fowCanvas = null;
+let fowCtx = null;
 
 // Undo/Redo
 let undoStack = [];
@@ -1425,6 +1567,13 @@ async function showMapApplication(clearCurrentMap = false) {
         };
         mapBackgroundImgObj = null;
         localStorage.clear();
+        fowEnabled = false; fowGmReveal = true; fowExplored = {}; fowCanvas = null;
+        updateFowUI();
+        // Collapse both sidebars for a clean canvas-first experience
+        npcSidebar.classList.add('collapsed');
+        npcDetailPanel.classList.add('collapsed');
+        toggleNpcListBtn.innerHTML = '▶';
+        toggleNpcDetailBtn.innerHTML = '◀';
     } else {
         const sm = JSON.parse(localStorage.getItem('mapSettings'));
         if (sm) mapSettings = {
@@ -1565,7 +1714,8 @@ function autoSaveCurrentNpc() {
         stats: npcStatsTextarea.value,
         tokenWidth: parseInt(tokenWidthInput.value) || 1,
         tokenHeight: parseInt(tokenHeightInput.value) || 1,
-        isEnemy: isEnemy
+        isEnemy: isEnemy,
+        visionRadius: parseInt(npcVisionRadiusInput.value) || 6
     };
 }
 
@@ -1582,6 +1732,7 @@ function selectNpc(id) {
     npcStatsTextarea.value = npc.stats || '';
     tokenWidthInput.value = npc.tokenWidth || 1;
     tokenHeightInput.value = npc.tokenHeight || 1;
+    npcVisionRadiusInput.value = npc.visionRadius !== undefined ? npc.visionRadius : 6;
     const isEnemy = !!npc.isEnemy;
     toggleEnemyBtn.textContent = isEnemy ? 'INIMIGO' : 'ALIADO';
     toggleEnemyBtn.className = `btn btn-sm npc-tag ${isEnemy ? 'enemy' : 'ally'}`;
@@ -1599,7 +1750,7 @@ function selectNpc(id) {
 function createNewNpc() {
     autoSaveCurrentNpc();
     const newId = `npc_${Date.now()}`;
-    npcs[newId] = { name:'Novo NPC', type:'', hpMax:10, hpCurrent:10, initiative:0, description:'', stats:'', tokenWidth:1, tokenHeight:1, tokenImageBase64:'', isEnemy:false };
+    npcs[newId] = { name:'Novo NPC', type:'', hpMax:10, hpCurrent:10, initiative:0, description:'', stats:'', tokenWidth:1, tokenHeight:1, tokenImageBase64:'', isEnemy:false, visionRadius:6 };
     saveStateToStorage();
     selectNpc(newId);
     showFeedback('Novo NPC criado!', 'success');
@@ -1679,6 +1830,260 @@ function addToInitiative(name, value, isEnemy) {
 function screenToWorld(sx, sy) {
     return { x: (sx - panX) / (GS() * zoomLevel), y: (sy - panY) / (GS() * zoomLevel) };
 }
+
+// ============================================================
+//   FOG OF WAR ENGINE
+// ============================================================
+
+/** Retorna o centro em pixel (no espaço do grid, sem zoom/pan) de um token */
+function tokenCenterGrid(token) {
+    return {
+        cx: token.x + token.widthInGrids  / 2,
+        cy: token.y + token.heightInGrids / 2
+    };
+}
+
+/** Raio de visão efetivo de um token: usa visionRadius do NPC, fallback ao slider global */
+function tokenVisionRadius(token) {
+    const npc = npcs[token.npcId];
+    if (!npc) return 0;
+    if (npc.isEnemy) return 0;             // inimigos não geram visão aliada
+    const r = (npc.visionRadius !== undefined && npc.visionRadius !== null)
+              ? npc.visionRadius
+              : fowDefaultRadius;
+    return Math.max(0, r);
+}
+
+/**
+ * Verifica LoS entre (ax,ay) e (bx,by) usando ray-marching por células.
+ * Retorna true se não houver obstáculo (paredes — futuro) entre os dois pontos.
+ * Por enquanto implementamos visão circular pura (sem obstáculos), mas a
+ * função está estruturada para receber um mapa de paredes no futuro.
+ */
+function hasLoS(ax, ay, bx, by) {
+    // Sem paredes configuradas → visão livre
+    return true;
+}
+
+/**
+ * Computa o conjunto de células visíveis pelos tokens aliados.
+ * Retorna um Set com chaves "col,row".
+ */
+function computeVisibleCells() {
+    const visible = new Set();
+    const cols = mapSettings.gridCols;
+    const rows = mapSettings.gridRows;
+
+    tokens.forEach(token => {
+        const radius = tokenVisionRadius(token);
+        if (radius <= 0) return;
+        const { cx, cy } = tokenCenterGrid(token);
+
+        const minC = Math.max(0, Math.floor(cx - radius - 1));
+        const maxC = Math.min(cols - 1, Math.ceil(cx + radius + 1));
+        const minR = Math.max(0, Math.floor(cy - radius - 1));
+        const maxR = Math.min(rows - 1, Math.ceil(cy + radius + 1));
+
+        for (let c = minC; c <= maxC; c++) {
+            for (let r = minR; r <= maxR; r++) {
+                // Distância do centro do token ao centro da célula
+                const dc = (c + 0.5) - cx;
+                const dr = (r + 0.5) - cy;
+                const dist = Math.sqrt(dc * dc + dr * dr);
+                if (dist <= radius + 0.5 && hasLoS(cx, cy, c + 0.5, r + 0.5)) {
+                    visible.add(`${c},${r}`);
+                }
+            }
+        }
+    });
+
+    return visible;
+}
+
+/** Atualiza fowExplored com as células agora visíveis */
+function updateFowExplored(visibleSet) {
+    visibleSet.forEach(key => { fowExplored[key] = true; });
+}
+
+/** Inicializa / redimensiona o offscreen canvas da névoa */
+function ensureFowCanvas() {
+    const cs = GS();
+    const w = mapSettings.gridCols * cs;
+    const h = mapSettings.gridRows * cs;
+    if (!fowCanvas) {
+        fowCanvas = document.createElement('canvas');
+        fowCtx    = fowCanvas.getContext('2d');
+    }
+    if (fowCanvas.width !== w || fowCanvas.height !== h) {
+        fowCanvas.width  = w;
+        fowCanvas.height = h;
+    }
+}
+
+/**
+ * Renderiza a camada de névoa sobre o canvas principal.
+ * Modo GM  → névoa semi-transparente fina sobre tudo (não bloqueia visão do mestre)
+ * Modo Player → névoa densa; células nunca vistas = opacas; exploradas = meia-névoa
+ */
+function drawFow(visibleSet) {
+    if (!fowEnabled) return;
+    ensureFowCanvas();
+
+    const cs  = GS();
+    const fc  = fowCtx;
+    const cols = mapSettings.gridCols;
+    const rows = mapSettings.gridRows;
+
+    fc.clearRect(0, 0, fowCanvas.width, fowCanvas.height);
+
+    if (fowGmReveal) {
+        // ── MODO GM: névoa sutil apenas sobre células fora da visão ──────────
+        fc.fillStyle = 'rgba(0,0,0,0.0)';
+        fc.fillRect(0, 0, fowCanvas.width, fowCanvas.height);
+
+        for (let c = 0; c < cols; c++) {
+            for (let r = 0; r < rows; r++) {
+                const key = `${c},${r}`;
+                if (visibleSet.has(key)) continue; // em visão → sem névoa
+                const explored = fowExplored[key];
+                fc.fillStyle = explored
+                    ? 'rgba(0,0,15,0.52)'      // explorada → névoa média
+                    : 'rgba(0,0,10,0.82)';      // nunca vista → névoa densa
+                fc.fillRect(c * cs, r * cs, cs, cs);
+            }
+        }
+
+        // Suavização do perímetro das zonas visíveis (glow radial por token)
+        fc.save();
+        fc.globalCompositeOperation = 'destination-out';
+        tokens.forEach(token => {
+            const radius = tokenVisionRadius(token);
+            if (radius <= 0) return;
+            const { cx, cy } = tokenCenterGrid(token);
+            const px = cx * cs, py = cy * cs;
+            const outerR = (radius + 0.7) * cs;
+            const innerR = Math.max(0, (radius - 1.2) * cs);
+            const grad = fc.createRadialGradient(px, py, innerR, px, py, outerR);
+            grad.addColorStop(0,   'rgba(0,0,0,1)');
+            grad.addColorStop(0.7, 'rgba(0,0,0,0.85)');
+            grad.addColorStop(1,   'rgba(0,0,0,0)');
+            fc.fillStyle = grad;
+            fc.beginPath();
+            fc.arc(px, py, outerR, 0, Math.PI * 2);
+            fc.fill();
+        });
+        fc.restore();
+
+    } else {
+        // ── MODO PLAYER: névoa bloqueante ─────────────────────────────────────
+        // 1. Cobrir tudo com névoa densa
+        fc.fillStyle = 'rgba(0,0,12,1)';
+        fc.fillRect(0, 0, fowCanvas.width, fowCanvas.height);
+
+        // 2. Células exploradas (mas fora de visão) → meia-névoa
+        for (let c = 0; c < cols; c++) {
+            for (let r = 0; r < rows; r++) {
+                const key = `${c},${r}`;
+                if (visibleSet.has(key) || !fowExplored[key]) continue;
+                fc.clearRect(c * cs, r * cs, cs, cs);
+                fc.fillStyle = 'rgba(0,0,12,0.60)';
+                fc.fillRect(c * cs, r * cs, cs, cs);
+            }
+        }
+
+        // 3. Abrir "buracos" suaves nas zonas de visão atual (destination-out)
+        fc.save();
+        fc.globalCompositeOperation = 'destination-out';
+        tokens.forEach(token => {
+            const radius = tokenVisionRadius(token);
+            if (radius <= 0) return;
+            const { cx, cy } = tokenCenterGrid(token);
+            const px = cx * cs, py = cy * cs;
+            const outerR = (radius + 0.5) * cs;
+            const innerR = Math.max(0, (radius - 1.0) * cs);
+            const grad = fc.createRadialGradient(px, py, innerR, px, py, outerR);
+            grad.addColorStop(0,   'rgba(0,0,0,1)');
+            grad.addColorStop(0.75,'rgba(0,0,0,0.9)');
+            grad.addColorStop(1,   'rgba(0,0,0,0)');
+            fc.fillStyle = grad;
+            fc.beginPath();
+            fc.arc(px, py, outerR, 0, Math.PI * 2);
+            fc.fill();
+        });
+        fc.restore();
+    }
+
+    // Blit do offscreen canvas no canvas principal (já sob transform)
+    ctx.drawImage(fowCanvas, 0, 0);
+}
+
+/** Desenha círculos de raio de visão (editor) quando FoW está ativo */
+function drawFowRadiiHelpers(visibleSet) {
+    if (!fowEnabled || !fowGmReveal) return;
+    const cs = GS();
+    tokens.forEach(token => {
+        const radius = tokenVisionRadius(token);
+        if (radius <= 0) return;
+        const { cx, cy } = tokenCenterGrid(token);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx * cs, cy * cs, radius * cs, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(167,139,250,0.35)';
+        ctx.lineWidth = 1.5 / zoomLevel;
+        ctx.setLineDash([4 / zoomLevel, 4 / zoomLevel]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+    });
+}
+
+/** Chave de persistência */
+function fowStorageKey() { return 'fowExplored_' + (mapSettings.name || 'map'); }
+
+function saveFowExplored() {
+    try { localStorage.setItem(fowStorageKey(), JSON.stringify(fowExplored)); } catch(e){}
+}
+
+function loadFowExplored() {
+    try {
+        const raw = localStorage.getItem(fowStorageKey());
+        fowExplored = raw ? JSON.parse(raw) : {};
+    } catch(e) { fowExplored = {}; }
+}
+
+function resetFowExplored() {
+    fowExplored = {};
+    saveFowExplored();
+    drawCanvas();
+    showFeedback('Névoa de exploração resetada.', 'info');
+    broadcast({ type: 'fow_reset' });
+}
+
+function updateFowUI() {
+    const fowToggleBtn      = $('fowToggleBtn');
+    const fowGmRevealBtn    = $('fowGmRevealBtn');
+    const fowClearBtn       = $('fowClearBtn');
+    const fowVisionWrap     = $('fowVisionSliderWrap');
+    const fowBadge          = $('fowBadge');
+
+    if (fowEnabled) {
+        fowToggleBtn.classList.add('fow-active');
+        fowGmRevealBtn.classList.remove('hidden');
+        fowClearBtn.classList.remove('hidden');
+        fowVisionWrap.classList.add('visible');
+        fowBadge.classList.add('visible');
+        fowGmRevealBtn.textContent = fowGmReveal ? '👓 GM' : '🧙 Player';
+        fowGmRevealBtn.classList.toggle('gm-hidden', !fowGmReveal);
+    } else {
+        fowToggleBtn.classList.remove('fow-active');
+        fowGmRevealBtn.classList.add('hidden');
+        fowClearBtn.classList.add('hidden');
+        fowVisionWrap.classList.remove('visible');
+        fowBadge.classList.remove('visible');
+    }
+}
+
+// ── Atalho de teclado F: ver DOMContentLoaded principal ──────────────────────
 
 // ============================================================
 //   DRAW
@@ -1796,7 +2201,97 @@ function drawTokens() {
     });
 }
 
-// Helper: convert grid squares to real-world display string
+/**
+ * Modo Player: só renderiza tokens que têm ao menos 1 célula dentro do visibleSet.
+ * Tokens aliados sempre aparecem (mesmo que fora de visão — estão sob controle do jogador).
+ * Inimigos só aparecem se ao menos a célula do centro estiver visível.
+ */
+function drawTokensFiltered(visibleSet) {
+    const cs = GS();
+    tokens.forEach(token => {
+        const npc = npcs[token.npcId];
+        const isEnemy = npc?.isEnemy;
+
+        // Verificar se alguma célula do token está visível
+        let visible = false;
+        if (!isEnemy) {
+            visible = true; // aliados sempre visíveis para o jogador
+        } else {
+            // Inimigo: verifica se ao menos 1 célula ocupada está visível
+            outer: for (let dc = 0; dc < token.widthInGrids; dc++) {
+                for (let dr = 0; dr < token.heightInGrids; dr++) {
+                    if (visibleSet.has(`${token.x + dc},${token.y + dr}`)) {
+                        visible = true;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (!visible) return;
+
+        const tw = token.widthInGrids * cs;
+        const th = token.heightInGrids * cs;
+        const x = token.x * cs, y = token.y * cs;
+        const isSelected = selectedToken === token;
+
+        ctx.save();
+        const r = Math.min(3 / zoomLevel, tw / 4, th / 4);
+
+        if (token.imageObj && token.imageObj.complete && token.imageObj.naturalWidth > 0) {
+            ctx.beginPath();
+            ctx.roundRect(x, y, tw, th, r);
+            ctx.clip();
+            ctx.drawImage(token.imageObj, x, y, tw, th);
+        } else {
+            ctx.fillStyle = isEnemy ? '#450a0a' : '#0c1a38';
+            ctx.beginPath();
+            ctx.roundRect(x, y, tw, th, r);
+            ctx.fill();
+            const fs = Math.max(8, Math.min(cs * 0.45, 22)) / zoomLevel;
+            ctx.fillStyle = isEnemy ? '#fca5a5' : '#93c5fd';
+            ctx.font = `bold ${fs}px Inter`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', x + tw/2, y + th/2);
+        }
+        ctx.restore();
+
+        if (npc?.hpMax > 0) {
+            const bh = Math.max(3, cs * 0.09) / zoomLevel;
+            const by = y + th - bh - 1/zoomLevel;
+            const ratio = Math.max(0, Math.min(1, (npc.hpCurrent || 0) / npc.hpMax));
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(x, by, tw, bh);
+            ctx.fillStyle = getHpColor(npc.hpCurrent, npc.hpMax);
+            ctx.fillRect(x, by, tw * ratio, bh);
+        }
+
+        if (npc?.name && cs * zoomLevel > 22) {
+            const fs = Math.max(6, Math.min(9, cs * 0.22)) / zoomLevel;
+            const labelH = fs + 4 / zoomLevel;
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(x, y + th + 0.5/zoomLevel, tw, labelH);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = `${fs}px Inter`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            const maxChars = Math.max(2, Math.floor(tw / (fs * 0.58)));
+            const displayName = npc.name.length > maxChars ? npc.name.substring(0, maxChars-1)+'…' : npc.name;
+            ctx.fillText(displayName, x + tw/2, y + th + 1.5/zoomLevel);
+        }
+
+        if (isSelected) {
+            ctx.strokeStyle = '#fde68a';
+            ctx.lineWidth = 2.5 / zoomLevel;
+            ctx.setLineDash([5/zoomLevel, 3/zoomLevel]);
+            ctx.strokeRect(x - 1.5/zoomLevel, y - 1.5/zoomLevel, tw + 3/zoomLevel, th + 3/zoomLevel);
+            ctx.setLineDash([]);
+        }
+        if (isEnemy && !isSelected) {
+            ctx.strokeStyle = 'rgba(239,68,68,0.6)';
+            ctx.lineWidth = 2 / zoomLevel;
+            ctx.strokeRect(x + 0.5/zoomLevel, y + 0.5/zoomLevel, tw - 1/zoomLevel, th - 1/zoomLevel);
+        }
+    });
+}
 function sqToUnit(squares) {
     const sys = mapSettings.unitSystem || 'squares';
     const scale = mapSettings.scalePerSquare || 1;
@@ -1946,6 +2441,7 @@ function resizeCanvasAndDraw() {
     else panX = Math.max(canvas.width - gw, Math.min(0, panX));
     if (gh < canvas.height) panY = (canvas.height - gh) / 2;
     else panY = Math.max(canvas.height - gh, Math.min(0, panY));
+    fowCanvas = null; // force offscreen canvas resize
     drawCanvas();
     zoomDisplay.textContent = Math.round(zoomLevel * 100) + '%';
 }
@@ -1956,9 +2452,30 @@ function drawCanvas() {
     ctx.translate(panX, panY);
     ctx.scale(zoomLevel, zoomLevel);
     drawGrid();
-    drawTokens();
-    drawRuler();
     drawAllDrawings();
+
+    // ── Fog of War ────────────────────────────────────────────
+    if (fowEnabled) {
+        const visibleSet = computeVisibleCells();
+        updateFowExplored(visibleSet);
+        saveFowExplored();
+
+        if (fowGmReveal) {
+            // GM mode: tokens rendered BEFORE névoa (visible under fog tint)
+            drawTokens();
+            drawFow(visibleSet);
+            drawFowRadiiHelpers(visibleSet);
+        } else {
+            // Player mode: névoa first, then only visible tokens on top
+            drawFow(visibleSet);
+            drawTokensFiltered(visibleSet);
+        }
+    } else {
+        drawTokens();
+    }
+    // ─────────────────────────────────────────────────────────
+
+    drawRuler();
     ctx.restore();
 }
 
@@ -2188,6 +2705,10 @@ function onPointerUp(e) {
         saveToUndo();
         saveStateToStorage();
         broadcast({ type:'token_move', tokenId:selectedToken.id, x:selectedToken.x, y:selectedToken.y });
+        // Sync FoW explored cells after token repositioning
+        if (fowEnabled) {
+            broadcast({ type:'fow_explored', explored: fowExplored });
+        }
     } else if (currentTool === 'draw-line' && drawingStart && drawingEnd) {
         const ddx = drawingEnd.x - drawingStart.x, ddy = drawingEnd.y - drawingStart.y;
         if (Math.hypot(ddx, ddy) > 0.05) {
@@ -2236,6 +2757,13 @@ document.addEventListener('keydown', e => {
     else if (e.key === 'c' || e.key === 'C') setTool('cone');
     else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
     else if (e.key === 'e' || e.key === 'E') setTool('eraser');
+    else if (e.key === 'f' || e.key === 'F') {
+        fowEnabled = !fowEnabled;
+        if (fowEnabled) loadFowExplored();
+        updateFowUI(); drawCanvas();
+        broadcast({ type: 'fow_state', fowEnabled, fowGmReveal });
+        showFeedback(fowEnabled ? '👁️ Névoa de Guerra ativada' : '🌟 Névoa de Guerra desativada', 'info');
+    }
     else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
     else if (e.key === '-') applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2);
     else if (e.key === 'Delete' && selectedToken) deleteSelectedToken();
@@ -2762,6 +3290,14 @@ function handleRemoteMessage(raw, sourceConn) {
                 drawings         = msg.drawings        || [];
                 initiativeOrder  = msg.initiativeOrder || [];
                 currentTurnIndex = msg.currentTurnIndex || 0;
+                // FoW state sync
+                if (msg.fowEnabled !== undefined) {
+                    fowEnabled  = !!msg.fowEnabled;
+                    fowGmReveal = msg.fowGmReveal !== undefined ? !!msg.fowGmReveal : true;
+                    if (msg.fowExplored) Object.assign(fowExplored, msg.fowExplored);
+                    saveFowExplored();
+                    updateFowUI();
+                }
                 mapNameDisplay.textContent = mapSettings.name;
                 reloadTokenImages().then(() => {
                     resizeCanvasAndDraw(); renderNpcList(); renderInitiative();
@@ -2850,6 +3386,33 @@ function handleRemoteMessage(raw, sourceConn) {
                 break;
             }
 
+            case 'fow_state': {
+                fowEnabled   = !!msg.fowEnabled;
+                fowGmReveal  = msg.fowGmReveal !== undefined ? !!msg.fowGmReveal : true;
+                if (fowEnabled) loadFowExplored();
+                updateFowUI();
+                drawCanvas();
+                break;
+            }
+
+            case 'fow_explored': {
+                // Host envia células exploradas acumuladas para clientes
+                if (msg.explored) {
+                    Object.assign(fowExplored, msg.explored);
+                    saveFowExplored();
+                    drawCanvas();
+                }
+                break;
+            }
+
+            case 'fow_reset': {
+                fowExplored = {};
+                saveFowExplored();
+                drawCanvas();
+                showFeedback('Névoa resetada pelo Mestre.', 'info');
+                break;
+            }
+
             case 'image_chunk': {
                 const { imageId, npcId, chunkIndex, totalChunks, data } = msg;
                 if (!imageAssemblyBuffer[imageId])
@@ -2932,7 +3495,10 @@ function sendFullStateSync(conn) {
         tokens:         tokens.map(t => ({...t, imageObj:null})),
         drawings,
         initiativeOrder,
-        currentTurnIndex
+        currentTurnIndex,
+        fowEnabled,
+        fowGmReveal,
+        fowExplored
     });
 
     const sessionId = Date.now();
@@ -3292,6 +3858,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Fog of War controls ───────────────────────────────────────
+    const fowToggleBtn   = $('fowToggleBtn');
+    const fowGmRevealBtn = $('fowGmRevealBtn');
+    const fowClearBtn    = $('fowClearBtn');
+    const fowSlider      = $('fowVisionSlider');
+    const fowLabel       = $('fowVisionLabel');
+
+    fowToggleBtn.addEventListener('click', () => {
+        fowEnabled = !fowEnabled;
+        if (fowEnabled) loadFowExplored();
+        updateFowUI(); drawCanvas();
+        broadcast({ type: 'fow_state', fowEnabled, fowGmReveal });
+        showFeedback(fowEnabled ? '👁️ Névoa de Guerra ativada' : '🌟 Névoa desativada', 'info');
+    });
+
+    fowGmRevealBtn.addEventListener('click', () => {
+        fowGmReveal = !fowGmReveal;
+        updateFowUI(); drawCanvas();
+        broadcast({ type: 'fow_state', fowEnabled, fowGmReveal });
+    });
+
+    fowClearBtn.addEventListener('click', () => {
+        showCustomConfirm('Resetar toda a névoa explorada?', confirmed => {
+            if (confirmed) resetFowExplored();
+            hideCustomConfirm();
+        }, 'Células exploradas serão esquecidas.');
+    });
+
+    fowSlider.addEventListener('input', () => {
+        fowDefaultRadius = parseInt(fowSlider.value);
+        fowLabel.textContent = fowDefaultRadius;
+        drawCanvas();
+    });
+
+    // Redraw ao alterar raio de visão do NPC
+    if ($('npcVisionRadius')) {
+        $('npcVisionRadius').addEventListener('input', () => {
+            autoSaveCurrentNpc();
+            if (fowEnabled) drawCanvas();
+        });
+    }
+    // ─────────────────────────────────────────────────────────────
+
     // Original single-player boot logic
     const hasSaved = localStorage.getItem('mapSettings') || localStorage.getItem('npcs');
     if (hasSaved) showMapApplication(false);
@@ -3299,7 +3908,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTool('move');
 });
 
-console.log('Escudo do Mestre v2 + PeerJS Passo 1 loaded ✓');
+console.log('Escudo do Mestre v2.1 + FoW/LoS + PeerJS loaded ✓');
 </script>
 </body>
 </html>
