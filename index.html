@@ -4206,22 +4206,21 @@ function makePeerConfig() {
         path:   '/',
         secure: true,
         debug:  1,
-        config: {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302'  },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
-                {
-                    urls: [
-                        'turn:global.relay.metered.ca:80',
-                        'turn:global.relay.metered.ca:443',
-                        'turns:global.relay.metered.ca:443'
-                    ],
-                    username:   'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ]
-        }
+config: {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    {
+      urls: 'turn:147.15.41.60:3478',
+      username: 'meujogo',
+      credential: 'senhaforte123',
+    },
+    {
+      urls: 'turn:147.15.41.60:3478?transport=tcp',
+      username: 'meujogo',
+      credential: 'senhaforte123',
+    },
+  ],
+},
     };
 }
 
