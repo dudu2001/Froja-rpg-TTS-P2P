@@ -5073,35 +5073,42 @@ function sendFullStateSync(conn) {
 // ============================================================
 //   PEERJS CONFIG
 // ============================================================
-function makePeerConfig() {
+async function getTurnCredentials() {
+    const secret = 'a5b7b10702b7aa1d9443260ba8125a6a6b184ef74e98446bf41ae25c40a68aa3';
+    const ttl = 3600;
+    const timestamp = Math.floor(Date.now() / 1000) + ttl;
+    const username = String(timestamp);
+    const key = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(secret),
+        { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(username));
+    const credential = btoa(String.fromCharCode(...new Uint8Array(sig)));
+    return { username, credential };
+}
+
+async function makePeerConfig() {
+    const { username, credential } = await getTurnCredentials();
     return {
         host:   '0.peerjs.com',
         port:   443,
         path:   '/',
         secure: true,
         debug:  1,
-config: {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:147.15.41.60:3478',
-      username: 'meujogo',
-      credential: 'senhaforte123',
-    },
-    {
-      urls: 'turn:147.15.41.60:3478?transport=tcp',
-      username: 'meujogo',
-      credential: 'senhaforte123',
-    },
-  ],
-},
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'turn:147.15.41.60:3478', username, credential },
+                { urls: 'turn:147.15.41.60:3478?transport=tcp', username, credential },
+            ]
+        }
     };
 }
 
 // ============================================================
 //   HOST INITIALIZATION
 // ============================================================
-function initAsHost() {
+async function initAsHost() {
     destroyPeer();
     isHost = true;
     myRole = 'host';
@@ -5109,7 +5116,7 @@ function initAsHost() {
     lobbyHostBtn.disabled = true;
     setLobbyStatus('⏳ Inicializando…', 'waiting');
 
-    peer = new Peer(undefined, makePeerConfig());
+    peer = new Peer(undefined, await makePeerConfig());
 
     const openTimeout = setTimeout(() => {
         if (!peer || peer.disconnected || !peer.open) {
@@ -5193,7 +5200,7 @@ function setupHostConnection(conn) {
 // ============================================================
 //   CLIENT INITIALIZATION
 // ============================================================
-function initAsClient(hostId) {
+async function initAsClient(hostId) {
     destroyPeer();
     isHost = false;
     myRole = 'client';
@@ -5201,7 +5208,7 @@ function initAsClient(hostId) {
     lobbyJoinBtn.disabled = true;
     setLobbyStatus('⏳ Conectando ao servidor…', 'waiting');
 
-    peer = new Peer(undefined, makePeerConfig());
+    peer = new Peer(undefined, await makePeerConfig());
 
     // Timeout for broker registration
     const brokerTimeout = setTimeout(() => {
