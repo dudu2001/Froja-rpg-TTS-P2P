@@ -203,6 +203,29 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.3);
         }
         .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); box-shadow: none; }
+        /* === SCROLL FADE INDICATOR === */
+        .scroll-fade-wrap {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .scroll-fade-wrap::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2.75rem;
+            background: linear-gradient(to bottom, transparent, rgba(22,32,46,0.95));
+            pointer-events: none;
+            transition: opacity 0.25s;
+            z-index: 2;
+        }
+        .scroll-fade-wrap.at-bottom::after { opacity: 0; }
+        .scroll-fade-wrap .sidebar-body,
+        .scroll-fade-wrap .panel-body { flex: 1; min-height: 0; }
+
         .sidebar-header {
             padding: 0.875rem 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -215,12 +238,17 @@
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
-        .sidebar-body::-webkit-scrollbar { width: 3px; }
-        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .sidebar-body::-webkit-scrollbar { width: 5px; }
+        .sidebar-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
 
         /* === RIGHT PANEL === */
         #npcDetailPanel {
@@ -251,12 +279,17 @@
         .panel-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
-        .panel-body::-webkit-scrollbar { width: 3px; }
-        .panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .panel-body::-webkit-scrollbar { width: 5px; }
+        .panel-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .panel-body::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .panel-body::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
 
         /* === CANVAS AREA === */
         .central-content {
@@ -281,6 +314,7 @@
         #gameCanvas.cur-grab { cursor: grab; }
         #gameCanvas.cur-grabbing { cursor: grabbing; }
         #gameCanvas.cur-crosshair { cursor: crosshair; }
+        #gameCanvas.cur-pan { cursor: all-scroll; }
 
         /* === TOGGLE SIDEBAR BUTTONS === */
         .toggle-sidebar-btn {
@@ -436,11 +470,19 @@
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 0.75rem;
             min-width: 190px;
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59,130,246,0.3) transparent;
             box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.05);
             z-index: 200;
-            overflow: hidden;
             display: none;
         }
+        #saveDropdown::-webkit-scrollbar { width: 4px; }
+        #saveDropdown::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
         #saveDropdown.open { display: block; animation: fadeInDown 0.12s ease; }
         @keyframes fadeInDown {
             from { opacity:0; transform:translateY(-6px); }
@@ -681,9 +723,20 @@
             box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
             max-width: 480px;
             width: 90%;
+            max-height: 88vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
             color: var(--text-secondary);
             border: 1px solid rgba(255,255,255,0.07);
         }
+        .custom-modal-content::-webkit-scrollbar { width: 5px; }
+        .custom-modal-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .custom-modal-content::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .custom-modal-content::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
         .custom-modal-buttons { display:flex; justify-content:center; gap:0.75rem; margin-top:1.5rem; }
 
         /* === MAIN SCREEN === */
@@ -726,6 +779,21 @@
             cursor: pointer;
         }
         .npc-list-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+        .npc-focus-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0 0.15rem;
+            flex-shrink: 0;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.15s, color 0.15s;
+            border-radius: 0.25rem;
+        }
+        .npc-focus-btn:hover { opacity: 1; color: #60a5fa; }
+        .npc-focus-btn.no-token { opacity: 0.2; cursor: default; }
         .npc-list-item.selected { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.08); }
         .npc-name-btn {
             flex: 1;
@@ -1170,9 +1238,11 @@
         <div class="sidebar-header">
             <span class="title-font text-sm font-bold text-white" style="margin:0 auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
         </div>
-        <div class="sidebar-body">
-            <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;background:linear-gradient(135deg,rgba(59,130,246,0.8),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 12px rgba(59,130,246,0.2);">＋ Novo NPC</button>
-            <div id="npcList"></div>
+        <div class="scroll-fade-wrap" id="npcScrollWrap">
+            <div class="sidebar-body" id="npcScrollBody">
+                <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;background:linear-gradient(135deg,rgba(59,130,246,0.8),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 12px rgba(59,130,246,0.2);">＋ Novo NPC</button>
+                <div id="npcList"></div>
+            </div>
         </div>
 
         <!-- Initiative Tracker -->
@@ -1224,7 +1294,7 @@
         <div id="canvasContainer">
             <canvas id="gameCanvas"></canvas>
             <!-- WebGL dynamic lighting layer (multiply blend) -->
-            <canvas id="lightingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:multiply;display:none;"></canvas>
+            <canvas id="lightingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0;"></canvas>
 
             <!-- Status badges -->
             <div id="lightBadge">💡 ILUMINAÇÃO ATIVA</div>
@@ -1254,7 +1324,8 @@
                 <div class="controls-divider"></div>
 
                 <!-- Tools -->
-                <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover (M)">✥</button>
+                <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover NPCs (M)">✥</button>
+                <button id="panToolBtn" class="btn btn-icon" data-tip="Mover Câmera (P)">🖐️</button>
                 <button id="rulerBtn" class="btn btn-icon" data-tip="Régua Linha (R)">📏</button>
                 <button id="coneBtn" class="btn btn-icon" data-tip="Régua Cone (C)">🔺</button>
                 <button id="drawLineBtn" class="btn btn-icon" data-tip="Desenhar (D)">✏️</button>
@@ -1382,7 +1453,10 @@
                     <div class="env-card" id="glManualLightsCard" style="display:none;">
                         <div class="env-card-title" style="display:flex;align-items:center;justify-content:space-between;">
                             <span>Fontes Manuais</span>
-                            <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
+                            <div style="display:flex;gap:0.3rem;align-items:center;">
+                                <button id="toggleLightIconsBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.4rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:#fde68a;" title="Mostrar/ocultar ícones de luz no mapa">👁️ Ícones</button>
+                                <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
+                            </div>
                         </div>
                         <div id="manualLightList"></div>
                         <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">💡 Clique em uma célula com a ferramenta ativa para posicionar.</p>
@@ -1401,7 +1475,8 @@
                 <span class="title-font text-sm font-bold text-white" style="letter-spacing:0.05em;opacity:0.9;">Ficha do NPC</span>
             </div>
         </div>
-        <div class="panel-body">
+        <div class="scroll-fade-wrap" id="npcDetailScrollWrap">
+            <div class="panel-body" id="npcDetailScrollBody">
             <div id="npcEmptyState" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
                 <p style="font-size:2rem;margin-bottom:0.75rem;opacity:0.4;">👤</p>
                 <p style="font-size:0.8125rem;line-height:1.5;opacity:0.6;">Selecione um NPC na lista<br>ou crie um novo para começar.</p>
@@ -1504,6 +1579,7 @@
                     <button id="addTokenBtn" class="btn btn-success" style="justify-content:center;">🎯 Adicionar ao Mapa</button>
                     <button id="addToInitiativeBtn" class="btn btn-ghost" style="justify-content:center;">⚡ Adicionar à Iniciativa</button>
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -1636,6 +1712,16 @@
                 <input type="checkbox" id="showGridLabelsInput" checked style="width:1rem;height:1rem;accent-color:var(--accent);">
                 <span class="field-label" style="margin:0;">Mostrar letras/números no grid</span>
             </label>
+        </div>
+
+        <!-- Resync section -->
+        <div id="resyncSection" style="margin-top:0.75rem;padding:0.75rem;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:0.625rem;">
+            <p style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">📡 Sincronização P2P</p>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                <button id="resyncBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#0f766e,#2563eb);">🔄 Resync Manual</button>
+                <span id="resyncStatus" style="font-size:0.72rem;color:var(--text-muted);flex:1;"></span>
+            </div>
+            <p id="resyncHint" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.4rem;line-height:1.4;"></p>
         </div>
 
         <div class="custom-modal-buttons">
@@ -1836,7 +1922,8 @@ let fowCtx = null;
 // ============================================================
 let glEnabled       = false;
 let lightingCanvas  = null;   // WebGL overlay canvas element
-let gl              = null;   // WebGL2 context
+let gl              = null;   // WebGL2/WebGL1 context
+let glIsWebGL2      = false;  // true = WebGL2, false = WebGL1 (iOS fallback)
 let glProgram       = null;
 let glPosBuffer     = null;
 let glUniforms      = {};     // cached uniform locations
@@ -1844,10 +1931,14 @@ let glAmbientIntensity = 0.08;          // 0..1
 let glAmbientColor     = [0.05, 0.06, 0.18]; // night sky blue
 let glDefaultLightRadius    = 5;
 let glDefaultLightIntensity = 1.0;
-// Manual light sources: [{id, x, y, color:[r,g,b], radius, intensity, label}]
+// Manual light sources: [{id, x, y, color, radius, intensity, label, isDragging}]
 let manualLights = [];
+let selectedLightToken = null;
+let lightDragOffsetX = 0, lightDragOffsetY = 0;
+let lightTokensVisible = true; // toggle visibility of light token icons on canvas
 
-const GL_VS = `#version 300 es
+const // WebGL2 shaders (#version 300 es)
+GL_VS = `#version 300 es
 in vec2 a_pos;
 void main(){gl_Position=vec4(a_pos,0.0,1.0);}
 `;
@@ -1869,13 +1960,9 @@ uniform float u_lightRadius[48];
 uniform float u_lightIntensity[48];
 
 void main(){
-    // screen coord (top-left origin)
     vec2 sc = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
-    // grid coord (in grid-squares)
     vec2 gc = (sc - u_pan) / (u_zoom * u_cellSize);
-
     vec3 total = u_ambient;
-
     for(int i = 0; i < 48; i++){
         if(i >= u_numLights) break;
         float d = distance(gc, u_lightPos[i]);
@@ -1888,6 +1975,46 @@ void main(){
     }
     total = clamp(total, 0.0, 1.0);
     fragColor = vec4(total, 1.0);
+}
+`;
+
+// WebGL1 shaders (GLSL ES 1.00) — fallback for iOS Safari / older Android
+const GL_VS1 = `
+attribute vec2 a_pos;
+void main(){gl_Position=vec4(a_pos,0.0,1.0);}
+`;
+
+const GL_FS1 = `
+precision highp float;
+
+uniform vec2  u_resolution;
+uniform vec2  u_pan;
+uniform float u_zoom;
+uniform float u_cellSize;
+uniform vec3  u_ambient;
+
+uniform int   u_numLights;
+uniform vec2  u_lightPos[48];
+uniform vec3  u_lightColor[48];
+uniform float u_lightRadius[48];
+uniform float u_lightIntensity[48];
+
+void main(){
+    vec2 sc = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
+    vec2 gc = (sc - u_pan) / (u_zoom * u_cellSize);
+    vec3 total = u_ambient;
+    for(int i = 0; i < 48; i++){
+        if(i >= u_numLights) break;
+        float d = distance(gc, u_lightPos[i]);
+        float r = max(u_lightRadius[i], 0.001);
+        if(d < r){
+            float t   = 1.0 - smoothstep(r * 0.05, r, d);
+            float att = t * t * t;
+            total += u_lightColor[i] * u_lightIntensity[i] * att;
+        }
+    }
+    total = clamp(total, 0.0, 1.0);
+    gl_FragColor = vec4(total, 1.0);
 }
 `;
 
@@ -2051,6 +2178,7 @@ async function showMapApplication(clearCurrentMap = false) {
         updateToggleButtonPositions();
         updateToolButtonsState();
         applyRoleUI();
+        initAllScrollFades();
         updateTokenControlsState();
         updateEnvUI();
         // Sync lighting canvas visibility
@@ -2094,6 +2222,48 @@ function hideCustomConfirm() {
 // ============================================================
 //   NPC MANAGEMENT
 // ============================================================
+function toggleLightLock(id) {
+    const ml = manualLights.find(m => m.id === id);
+    if (!ml) return;
+    ml.locked = !ml.locked;
+    if (ml.locked && selectedLightToken?.id === id) {
+        ml.isDragging = false; // stop any active drag
+    }
+    renderManualLightList();
+    drawCanvas();
+    saveStateToStorage();
+    broadcast({ type: 'gl_manual_lights', manualLights });
+    showFeedback(ml.locked ? '🔒 Luz bloqueada.' : '🔓 Luz desbloqueada.', 'info');
+}
+
+function focusLightToken(id) {
+    const ml = manualLights.find(m => m.id === id);
+    if (!ml) return;
+    selectedLightToken = ml;
+    const cs = GS();
+    panX = canvas.width  / 2 - (ml.x + 0.5) * cs * zoomLevel;
+    panY = canvas.height / 2 - (ml.y + 0.5) * cs * zoomLevel;
+    resizeCanvasAndDraw();
+    renderManualLightList();
+}
+
+function focusCameraOnNpc(npcId) {
+    const token = tokens.find(t => t.npcId === npcId);
+    if (!token) return;
+    const cs = GS();
+    // Centro do token em pixels no espaço do mundo
+    const tokenCenterX = (token.x + token.widthInGrids / 2) * cs * zoomLevel;
+    const tokenCenterY = (token.y + token.heightInGrids / 2) * cs * zoomLevel;
+    // Centraliza a câmera no token
+    panX = canvas.width  / 2 - tokenCenterX;
+    panY = canvas.height / 2 - tokenCenterY;
+    resizeCanvasAndDraw();
+    // Flash de destaque no token
+    selectedToken = token;
+    updateTokenControlsState();
+    drawCanvas();
+}
+
 function renderNpcList() {
     npcListEl.innerHTML = '';
     const ids = Object.keys(npcs);
@@ -2148,8 +2318,21 @@ function renderNpcList() {
             });
         });
 
+        // Eye button — focus camera on token
+        const eyeBtn = D.createElement('button');
+        const hasToken = tokens.some(t => t.npcId === id);
+        eyeBtn.className = 'npc-focus-btn' + (hasToken ? '' : ' no-token');
+        eyeBtn.innerHTML = '👁️';
+        eyeBtn.title = hasToken ? 'Focar câmera no token' : 'Sem token no mapa';
+        eyeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (hasToken) focusCameraOnNpc(id);
+            else showFeedback('Este NPC não tem token no mapa.', 'error');
+        });
+
         div.appendChild(nameBtn);
         if (max > 0) div.appendChild(hpSpan);
+        div.appendChild(eyeBtn);
         div.appendChild(tag);
         div.appendChild(delBtn);
         npcListEl.appendChild(div);
@@ -2548,12 +2731,19 @@ function glCompileShader(type, src) {
 
 function initWebGL() {
     lightingCanvas = $('lightingCanvas');
-    const ctx2 = lightingCanvas.getContext('webgl2', { alpha: false, premultipliedAlpha: false });
-    if (!ctx2) { console.warn('WebGL2 not available'); return false; }
+    // Try WebGL2 first, fallback to WebGL1 for iOS Safari / older Android
+    let ctx2 = lightingCanvas.getContext('webgl2', { alpha: false, premultipliedAlpha: false });
+    glIsWebGL2 = !!ctx2;
+    if (!ctx2) {
+        ctx2 = lightingCanvas.getContext('webgl', { alpha: false, premultipliedAlpha: false });
+    }
+    if (!ctx2) { console.warn('WebGL not available'); return false; }
     gl = ctx2;
 
-    const vs = glCompileShader(gl.VERTEX_SHADER, GL_VS);
-    const fs = glCompileShader(gl.FRAGMENT_SHADER, GL_FS);
+    const vsSource = glIsWebGL2 ? GL_VS : GL_VS1;
+    const fsSource = glIsWebGL2 ? GL_FS : GL_FS1;
+    const vs = glCompileShader(gl.VERTEX_SHADER, vsSource);
+    const fs = glCompileShader(gl.FRAGMENT_SHADER, fsSource);
     glProgram = gl.createProgram();
     gl.attachShader(glProgram, vs); gl.attachShader(glProgram, fs);
     gl.linkProgram(glProgram);
@@ -2576,12 +2766,10 @@ function initWebGL() {
 function resizeLightingCanvas() {
     if (!lightingCanvas || !gl) return;
     const w = canvas.width, h = canvas.height;
+    // Only resize if dimensions actually changed (perf optimization)
+    if (lightingCanvas.width === w && lightingCanvas.height === h) return;
     lightingCanvas.width  = w;
     lightingCanvas.height = h;
-    // Sync CSS pixel dimensions to match gameCanvas
-    const rect = canvas.getBoundingClientRect();
-    lightingCanvas.style.width  = canvas.style.width  || rect.width  + 'px';
-    lightingCanvas.style.height = canvas.style.height || rect.height + 'px';
     gl.viewport(0, 0, w, h);
 }
 
@@ -2703,7 +2891,9 @@ function toggleLighting(on) {
         }
     }
     glEnabled = on;
-    lightingCanvas.style.display = on ? 'block' : 'none';
+    // lightingCanvas is used as offscreen WebGL target only — always hidden as DOM overlay
+    // Compositing is done manually in drawCanvas() via ctx.drawImage + multiply blend
+    lightingCanvas.style.display = 'none';
     updateEnvUI();
     drawCanvas();
     broadcast({ type: 'gl_state', glEnabled, glAmbientIntensity, glAmbientColor });
@@ -2738,20 +2928,25 @@ function setNpcLightPreset(hex) {
 
 // ── Manual Light Management ───────────────────────────────────────────────────
 function addManualLight() {
+    const offset = manualLights.length % 5;
     const light = {
         id: 'ml_' + Date.now(),
-        x: Math.floor(mapSettings.gridCols / 2),
-        y: Math.floor(mapSettings.gridRows / 2),
+        x: Math.min(Math.floor(mapSettings.gridCols / 2) + offset, mapSettings.gridCols - 1),
+        y: Math.min(Math.floor(mapSettings.gridRows / 2) + offset, mapSettings.gridRows - 1),
         color: '#ffcc66',
         radius: 5,
         intensity: 1.0,
-        label: 'Tocha ' + (manualLights.length + 1)
+        label: 'Tocha ' + (manualLights.length + 1),
+        isDragging: false,
+        locked: false
     };
     manualLights.push(light);
+    selectedLightToken = light;
     renderManualLightList();
-    if (glEnabled) drawCanvas();
+    drawCanvas();
     saveStateToStorage();
     broadcast({ type: 'gl_manual_lights', manualLights });
+    showFeedback('\uD83D\uDD25 Luz criada! Use ✕ Mover para arrastá-la.', 'success');
 }
 
 function deleteManualLight(id) {
@@ -2772,7 +2967,9 @@ function renderManualLightList() {
     list.innerHTML = '';
     manualLights.forEach(ml => {
         const div = document.createElement('div');
+        const isSelML = selectedLightToken && selectedLightToken.id === ml.id;
         div.className = 'light-item';
+        if (isSelML) div.style.cssText = 'border-color:rgba(253,230,138,0.55);background:rgba(253,230,138,0.06);';
         div.innerHTML = `
             <span class="light-item-dot" style="background:${ml.color};color:${ml.color};"></span>
             <div style="flex:1;min-width:0;">
@@ -2794,6 +2991,8 @@ function renderManualLightList() {
                         oninput="manualLights.find(m=>m.id==='${ml.id}').radius=parseFloat(this.value)||3;if(glEnabled)drawCanvas();saveStateToStorage();">
                 </div>
             </div>
+            <button onclick="focusLightToken('${ml.id}')" style="background:none;border:none;color:rgba(251,191,36,0.5);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:color 0.15s;" title="Focar câmera" onmouseenter="this.style.color='rgba(251,191,36,1)'" onmouseleave="this.style.color='rgba(251,191,36,0.5)'">&#128065;&#65039;</button>
+            <button onclick="toggleLightLock('${ml.id}')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:opacity 0.15s;opacity:${ml.locked?1:0.4};" title="${ml.locked?'Desbloquear movimento':'Bloquear movimento'}">&#128274;</button>
             <button onclick="deleteManualLight('${ml.id}')" style="background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:1rem;padding:0.1rem;line-height:1;flex-shrink:0;" title="Remover">×</button>
         `;
         list.appendChild(div);
@@ -2934,6 +3133,64 @@ function getHpColor(cur, max) {
     if (!max) return '#60a5fa';
     const r = cur / max;
     return r > 0.6 ? '#10b981' : r > 0.3 ? '#f59e0b' : '#ef4444';
+}
+
+function drawLightTokens() {
+    if (!manualLights.length || !lightTokensVisible) return;
+    const cs = GS();
+    manualLights.forEach(ml => {
+        const px = (ml.x + 0.5) * cs;
+        const py = (ml.y + 0.5) * cs;
+        const isSelected = selectedLightToken && selectedLightToken.id === ml.id;
+        const sz = Math.max(cs * 0.72, 18 / zoomLevel);
+        const half = sz / 2;
+        const hexColor = (typeof ml.color === 'string') ? ml.color : '#ffcc66';
+        ctx.save();
+        const glowR = (ml.radius || 4) * cs * 0.18;
+        const grd = ctx.createRadialGradient(px, py, 0, px, py, glowR);
+        grd.addColorStop(0, hexColor + 'bb');
+        grd.addColorStop(1, hexColor + '00');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(px, py, glowR, 0, Math.PI * 2);
+        ctx.fill();
+        const bodyR = Math.min(4 / zoomLevel, half * 0.4);
+        ctx.fillStyle = 'rgba(20,10,0,0.82)';
+        ctx.strokeStyle = isSelected ? '#fde68a' : hexColor;
+        ctx.lineWidth = (isSelected ? 2.5 : 1.8) / zoomLevel;
+        if (isSelected) ctx.setLineDash([5 / zoomLevel, 3 / zoomLevel]);
+        ctx.beginPath();
+        ctx.roundRect(px - half, py - half, sz, sz, bodyR);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const fs = Math.max(8, Math.min(sz * 0.56, 22 / zoomLevel));
+        ctx.font = `${fs}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uD83D\uDD25', px, py);
+        if (cs * zoomLevel > 20) {
+            const lfs = Math.max(6, Math.min(9, cs * 0.22 * zoomLevel));
+            const labelH = lfs + 3 / zoomLevel;
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(px - half, py + half + 0.5 / zoomLevel, sz, labelH);
+            ctx.fillStyle = 'rgba(255,220,100,0.95)';
+            ctx.font = `${lfs}px Inter, sans-serif`;
+            const maxC = Math.max(2, Math.floor(sz / (lfs * 0.58)));
+            const lbl = ml.label || 'Luz';
+            ctx.fillText(lbl.length > maxC ? lbl.slice(0, maxC - 1) + '...' : lbl, px, py + half + labelH / 2 + 0.5 / zoomLevel);
+        }
+        // Lock icon overlay when locked
+        if (ml.locked) {
+            const lkFs = Math.max(6, Math.min(sz * 0.32, 12 / zoomLevel));
+            ctx.font = `${lkFs}px serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.fillText('\uD83D\uDD12', px + half - 0.5 / zoomLevel, py - half + 0.5 / zoomLevel);
+        }
+
+        ctx.restore();
+    });
 }
 
 function drawTokens() {
@@ -3264,6 +3521,7 @@ function drawCanvas() {
     ctx.scale(zoomLevel, zoomLevel);
     drawGrid();
     drawAllDrawings();
+    drawLightTokens();
 
     // ── Fog of War ────────────────────────────────────────────
     if (fowEnabled) {
@@ -3289,9 +3547,16 @@ function drawCanvas() {
     drawRuler();
     ctx.restore();
 
-    // ── WebGL Lighting (after 2D restore, composited on top) ──
-    // A iluminação permanece visível para todos sem alterar a geometria da FoW.
-    if (glEnabled) renderLighting(visibleSet);
+    // ── WebGL Lighting (composited via Canvas 2D — iOS Safari compatible) ──
+    if (glEnabled) {
+        renderLighting(visibleSet);
+        // Draw the WebGL result onto the 2D canvas using multiply blend
+        // This avoids CSS mix-blend-mode which doesn't work on iOS Safari canvas
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(lightingCanvas, 0, 0);
+        ctx.restore();
+    }
     // ─────────────────────────────────────────────────────────
 }
 
@@ -3408,10 +3673,17 @@ hpModalCancel.addEventListener('click', () => { hpModal.classList.add('hidden');
 // ============================================================
 //   CANVAS EVENTS
 // ============================================================
+function getClientPos(e) {
+    // Returns raw clientX/clientY for both mouse and touch events
+    if (e.touches?.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches?.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+}
+
 function getCanvasPos(e) {
     const r = canvas.getBoundingClientRect();
-    if (e.touches?.length > 0) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    const c = getClientPos(e);
+    return { x: c.x - r.left, y: c.y - r.top };
 }
 
 function onPointerDown(e) {
@@ -3420,8 +3692,9 @@ function onPointerDown(e) {
     if (isRightBtn || isMiddle) {
         e.preventDefault();
         isPanning = true;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
+        const cp0 = getClientPos(e);
+        lastMouseX = cp0.x;
+        lastMouseY = cp0.y;
         canvas.classList.add('cur-grabbing');
         return;
     }
@@ -3429,13 +3702,41 @@ function onPointerDown(e) {
     const pos = getCanvasPos(e);
     const world = screenToWorld(pos.x, pos.y);
 
+    if (currentTool === 'pan') {
+        e.preventDefault();
+        isPanning = true;
+        const cp = getClientPos(e);
+        lastMouseX = cp.x;
+        lastMouseY = cp.y;
+        canvas.classList.add('cur-grabbing');
+        return;
+    }
+
     if (currentTool === 'move') {
         let found = false;
+        // Light tokens first
+        for (let i = manualLights.length - 1; i >= 0; i--) {
+            const ml = manualLights[i];
+            if (world.x >= ml.x && world.x < ml.x + 1 && world.y >= ml.y && world.y < ml.y + 1) {
+                selectedLightToken = ml;
+                selectedToken = null;
+                if (!ml.locked) {
+                    lightDragOffsetX = world.x - ml.x;
+                    lightDragOffsetY = world.y - ml.y;
+                    ml.isDragging = true;
+                }
+                renderManualLightList();
+                drawCanvas();
+                updateTokenControlsState();
+                return;
+            }
+        }
+        // NPC tokens
         for (let i = tokens.length-1; i >= 0; i--) {
             const t = tokens[i];
             if (world.x >= t.x && world.x < t.x+t.widthInGrids && world.y >= t.y && world.y < t.y+t.heightInGrids) {
                 selectedToken = t;
-                // Verificar vínculo: só o dono pode arrastar
+                selectedLightToken = null;
                 if (canIMoveToken(t)) {
                     t.isDragging = true;
                     dragOffsetX = world.x - t.x;
@@ -3446,7 +3747,7 @@ function onPointerDown(e) {
                 break;
             }
         }
-        if (!found) selectedToken = null;
+        if (!found) { selectedToken = null; selectedLightToken = null; }
     } else if (currentTool === 'ruler' || currentTool === 'cone') {
         rulerMode = currentTool === 'cone' ? 'cone' : 'line';
         rulerStart = { x:world.x, y:world.y }; rulerEnd = { ...rulerStart };
@@ -3474,14 +3775,23 @@ function onPointerMove(e) {
     }
 
     if (isPanning) {
-        panX += e.clientX - lastMouseX;
-        panY += e.clientY - lastMouseY;
-        lastMouseX = e.clientX; lastMouseY = e.clientY;
+        const cp1 = getClientPos(e);
+        panX += cp1.x - lastMouseX;
+        panY += cp1.y - lastMouseY;
+        lastMouseX = cp1.x; lastMouseY = cp1.y;
         resizeCanvasAndDraw();
         return;
     }
 
-    if (currentTool === 'move' && selectedToken?.isDragging) {
+    if (currentTool === 'move' && selectedLightToken?.isDragging) {
+        let nx = Math.floor(world.x - lightDragOffsetX);
+        let ny = Math.floor(world.y - lightDragOffsetY);
+        nx = Math.max(0, Math.min(nx, mapSettings.gridCols - 1));
+        ny = Math.max(0, Math.min(ny, mapSettings.gridRows - 1));
+        selectedLightToken.x = nx;
+        selectedLightToken.y = ny;
+        drawCanvas();
+    } else if (currentTool === 'move' && selectedToken?.isDragging) {
         const tw = selectedToken.widthInGrids, th = selectedToken.heightInGrids;
         let nx = Math.floor(world.x - dragOffsetX);
         let ny = Math.floor(world.y - dragOffsetY);
@@ -3518,7 +3828,18 @@ function eraseAt(world) {
 }
 
 function onPointerUp(e) {
-    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    if (isPanning) {
+        isPanning = false;
+        canvas.classList.remove('cur-grabbing');
+        if (currentTool === 'pan') canvas.classList.add('cur-grab');
+    }
+    if (currentTool === 'move' && selectedLightToken?.isDragging) {
+        selectedLightToken.isDragging = false;
+        saveStateToStorage();
+        broadcast({ type: 'gl_manual_lights', manualLights });
+        renderManualLightList();
+        drawCanvas();
+    }
     if (currentTool === 'move' && selectedToken?.isDragging) {
         selectedToken.isDragging = false;
         saveToUndo();
@@ -3547,16 +3868,55 @@ canvas.addEventListener('mousedown', onPointerDown);
 canvas.addEventListener('mousemove', onPointerMove);
 canvas.addEventListener('mouseup', onPointerUp);
 canvas.addEventListener('mouseleave', () => {
-    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    if (isPanning) {
+        isPanning = false;
+        canvas.classList.remove('cur-grabbing');
+        if (currentTool === 'pan') canvas.classList.add('cur-grab');
+    }
     coordDisplay.style.display = 'none';
     if (currentTool === 'draw-line' && drawingStart) { drawingStart=null; drawingEnd=null; drawCanvas(); }
 });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-// Touch support
-canvas.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, { passive:false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive:false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(e); }, { passive:false });
+// Touch support with pinch-to-zoom
+let lastTouchDist = null;
+
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+        // Two fingers: start pinch-zoom, cancel any dragging
+        lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (selectedToken) { selectedToken.isDragging = false; }
+        isPanning = false;
+    } else {
+        lastTouchDist = null;
+        onPointerDown(e);
+    }
+}, { passive:false });
+
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2 && lastTouchDist !== null) {
+        // Pinch-to-zoom centered on midpoint of two fingers
+        const newDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = newDist / lastTouchDist;
+        lastTouchDist = newDist;
+        const r = canvas.getBoundingClientRect();
+        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+        applyZoom(factor, mx, my);
+    } else {
+        onPointerMove(e);
+    }
+}, { passive:false });
+
+canvas.addEventListener('touchend', e => { e.preventDefault(); lastTouchDist = null; onPointerUp(e); }, { passive:false });
 
 // Scroll to zoom (centered on cursor)
 canvas.addEventListener('wheel', e => {
@@ -3565,6 +3925,81 @@ canvas.addEventListener('wheel', e => {
     applyZoom(e.deltaY < 0 ? ZOOM_FACTOR : 1/ZOOM_FACTOR, e.clientX - r.left, e.clientY - r.top);
 }, { passive:false });
 
+// Page Visibility API — resync when device wakes / tab comes back
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !isHost && myRole !== null) {
+        if (connections.length > 0 && connections[0].open) {
+            setTimeout(() => connSend(connections[0], { type: 'request_sync' }), 500);
+        } else if (_clientHostPeerId) {
+            scheduleClientReconnect(_clientHostPeerId);
+        }
+    }
+});
+
+// ============================================================
+//   SCROLL FADE INDICATORS
+// ============================================================
+function initScrollFade(wrapId, bodyId) {
+    const wrap = document.getElementById(wrapId);
+    const body = document.getElementById(bodyId);
+    if (!wrap || !body) return;
+    const update = () => {
+        const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 6;
+        wrap.classList.toggle('at-bottom', atBottom);
+    };
+    body.addEventListener('scroll', update, { passive: true });
+    new MutationObserver(update).observe(body, { childList: true, subtree: true });
+    update();
+}
+function initAllScrollFades() {
+    initScrollFade('npcScrollWrap',       'npcScrollBody');
+    initScrollFade('npcDetailScrollWrap', 'npcDetailScrollBody');
+}
+
+// ============================================================
+//   RESYNC P2P
+// ============================================================
+let _pendingResyncStatus = false;
+let _lastResync = 0;
+
+function updateResyncUI() {
+    const btn    = document.getElementById('resyncBtn');
+    const hint   = document.getElementById('resyncHint');
+    const status = document.getElementById('resyncStatus');
+    if (!btn || !hint) return;
+    const connected = connections.filter(c => c && c.open).length;
+    if (isHost) {
+        hint.textContent   = connected > 0 ? `Reenvia todo o estado para ${connected} jogador(es).` : 'Nenhum jogador conectado.';
+        btn.disabled       = connected === 0;
+        status.textContent = connected > 0 ? `🟢 ${connected} online` : '⚫ sem conexões';
+    } else {
+        const hasConn      = connections.length > 0 && connections[0].open;
+        hint.textContent   = hasConn ? 'Solicita ao Mestre o estado completo do mapa.' : 'Você não está conectado ao Mestre.';
+        btn.disabled       = !hasConn;
+        status.textContent = hasConn ? '🟢 conectado' : '🔴 desconectado';
+    }
+}
+
+document.getElementById('resyncBtn')?.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - _lastResync < 3000) { showFeedback('Aguarde alguns segundos.', 'error'); return; }
+    _lastResync = now;
+    const status = document.getElementById('resyncStatus');
+    if (isHost) {
+        const active = connections.filter(c => c && c.open);
+        if (!active.length) { showFeedback('Nenhum jogador conectado.', 'error'); return; }
+        broadcastFullState();
+        showFeedback(`🔄 Estado enviado para ${active.length} jogador(es)!`, 'success');
+        if (status) status.textContent = `✅ enviado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+    } else {
+        if (!connections.length || !connections[0].open) { showFeedback('Sem conexão com o Mestre.', 'error'); return; }
+        connSend(connections[0], { type: 'request_sync' });
+        showFeedback('🔄 Resync solicitado…', 'info');
+        _pendingResyncStatus = true;
+        if (status) status.textContent = '⏳ aguardando…';
+    }
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -3572,6 +4007,7 @@ document.addEventListener('keydown', e => {
     if (ctrl && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
     else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); redo(); }
     else if (e.key === 'm' || e.key === 'M') setTool('move');
+    else if (e.key === 'p' || e.key === 'P') setTool('pan');
     else if (e.key === 'r' || e.key === 'R') setTool('ruler');
     else if (e.key === 'c' || e.key === 'C') setTool('cone');
     else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
@@ -3581,8 +4017,19 @@ document.addEventListener('keydown', e => {
     }
     else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
     else if (e.key === '-') applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2);
-    else if (e.key === 'Delete' && selectedToken) deleteSelectedToken();
-    else if (e.key === 'Escape') { selectedToken=null; updateTokenControlsState(); drawCanvas(); }
+    else if (e.key === 'Delete') {
+        if (selectedLightToken && !selectedLightToken.locked) { deleteManualLight(selectedLightToken.id); selectedLightToken = null; drawCanvas(); } else if (selectedLightToken?.locked) { showFeedback('🔒 Desbloqueie a luz antes de deletar.', 'error'); }
+        else if (selectedToken) deleteSelectedToken();
+    }
+    else if (e.key === 'Escape') { selectedToken = null; selectedLightToken = null; updateTokenControlsState(); drawCanvas(); }
+    else if (!e.ctrlKey && !e.metaKey) {
+        // Arrow keys / WASD camera pan (always active, 60px per press)
+        const PAN_STEP = 60;
+        if (e.key === 'ArrowLeft')  { panX += PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowRight') { panX -= PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowUp')    { panY += PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowDown')  { panY -= PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+    }
 });
 
 // ============================================================
@@ -3600,11 +4047,16 @@ function setTool(tool) {
         tool === 'ruler' || tool === 'cone' || tool === 'draw-line' || tool === 'eraser'
             ? 'cur-crosshair' : 'cur-grab'
     );
+    // Pan tool: show grab cursor always
+    if (tool === 'pan') {
+        canvas.className = '';
+        canvas.classList.add('cur-grab');
+    }
 }
 
 function updateToolButtonsState() {
-    [moveToolBtn, rulerBtn, coneBtn, drawLineBtn, eraserBtn].forEach(b => b?.classList.remove('active-tool'));
-    const map = { move:moveToolBtn, ruler:rulerBtn, cone:coneBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
+    [moveToolBtn, panToolBtn, rulerBtn, coneBtn, drawLineBtn, eraserBtn].forEach(b => b?.classList.remove('active-tool'));
+    const map = { move:moveToolBtn, pan:panToolBtn, ruler:rulerBtn, cone:coneBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
     if (map[currentTool]) map[currentTool].classList.add('active-tool');
 }
 
@@ -3680,6 +4132,7 @@ toggleNpcDetailBtn.addEventListener('click', () => {
 //   TOOL BUTTON LISTENERS
 // ============================================================
 moveToolBtn.addEventListener('click', () => setTool('move'));
+panToolBtn.addEventListener('click', () => setTool(currentTool === 'pan' ? 'move' : 'pan'));
 rulerBtn.addEventListener('click', () => setTool(currentTool === 'ruler' ? 'move' : 'ruler'));
 coneBtn.addEventListener('click', () => setTool(currentTool === 'cone' ? 'move' : 'cone'));
 drawLineBtn.addEventListener('click', () => setTool(currentTool === 'draw-line' ? 'move' : 'draw-line'));
@@ -3981,6 +4434,11 @@ mapSettingsBtn.addEventListener('click', () => {
         mapBackgroundPreviewContainer.classList.add('hidden');
     }
     mapSettingsModal.classList.remove('hidden');
+    setTimeout(() => {
+        const mc = mapSettingsModal.querySelector('.custom-modal-content');
+        if (mc) mc.scrollTop = 0;
+    }, 10);
+    updateResyncUI();
 });
 
 // Live update of cone angle label and scale preview
@@ -4206,6 +4664,22 @@ function connSend(conn, obj) {
 
 // Central message router.
 // PeerJS default serialization delivers already-parsed objects to .on('data').
+function applyLightIconsToggleUI() {
+    const btn = document.getElementById('toggleLightIconsBtn');
+    if (!btn) return;
+    if (lightTokensVisible) {
+        btn.style.background = 'rgba(251,191,36,0.12)';
+        btn.style.color = '#fde68a';
+        btn.style.opacity = '1';
+        btn.title = 'Ocultar ícones de luz no mapa';
+    } else {
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.color = 'rgba(156,163,175,0.6)';
+        btn.style.opacity = '0.6';
+        btn.title = 'Mostrar ícones de luz no mapa';
+    }
+}
+
 function handleRemoteMessage(raw, sourceConn) {
     // raw is already a parsed object from PeerJS json serialization,
     // but guard against the rare case it arrives as a string.
@@ -4246,12 +4720,23 @@ function handleRemoteMessage(raw, sourceConn) {
                     glAmbientColor     = msg.glAmbientColor     ?? glAmbientColor;
                     manualLights       = msg.manualLights       ?? manualLights;
                     if (glEnabled && !gl) initWebGL();
-                    if (lightingCanvas) lightingCanvas.style.display = glEnabled ? 'block' : 'none';
+                    if (lightingCanvas) lightingCanvas.style.display = 'none'; // offscreen only — composited via ctx.drawImage
                 }
                 updateEnvUI();
                 mapNameDisplay.textContent = mapSettings.name;
+                if (msg.lightTokensVisible !== undefined) {
+                    lightTokensVisible = !!msg.lightTokensVisible;
+                    applyLightIconsToggleUI();
+                }
+                if (!isHost) startClientSyncTimer();
                 reloadTokenImages().then(() => {
                     resizeCanvasAndDraw(); renderNpcList(); renderInitiative(); renderTokenLightList();
+                    if (_pendingResyncStatus) {
+                        _pendingResyncStatus = false;
+                        const st = document.getElementById('resyncStatus');
+                        if (st) st.textContent = `✅ ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+                        showFeedback('✅ Mapa sincronizado!', 'success');
+                    }
                 });
                 break;
             }
@@ -4383,6 +4868,12 @@ function handleRemoteMessage(raw, sourceConn) {
                 break;
             }
 
+            case 'light_icons_visible': {
+                lightTokensVisible = !!msg.visible;
+                applyLightIconsToggleUI();
+                drawCanvas();
+                break;
+            }
             case 'gl_state': {
                 glEnabled          = !!msg.glEnabled;
                 glAmbientIntensity = msg.glAmbientIntensity ?? glAmbientIntensity;
@@ -4445,9 +4936,15 @@ function handleRemoteMessage(raw, sourceConn) {
                 break;
             }
             case 'pong': {
-                // Host registra timestamp do pong na conexão de origem
                 if (isHost && sourceConn) {
                     sourceConn._lastPong = Date.now();
+                }
+                break;
+            }
+            case 'request_sync': {
+                if (isHost && sourceConn && sourceConn.open) {
+                    console.log('[P2P] Resync solicitado por', sourceConn.peer);
+                    sendFullStateSync(sourceConn);
                 }
                 break;
             }
@@ -4541,7 +5038,8 @@ function sendFullStateSync(conn) {
         glEnabled,
         glAmbientIntensity,
         glAmbientColor,
-        manualLights
+        manualLights,
+        lightTokensVisible
     });
 
     const sessionId = Date.now();
@@ -4750,9 +5248,10 @@ function initAsClient(hostId) {
 function setupClientConnection(conn) {
     conn.on('open', () => {
         connections = [conn];
+        _clientHostPeerId = conn.peer;
+        _reconnectAttempts = 0;
         updatePeerBadge();
         setLobbyStatus('✅ Conectado! Aguardando dados do mapa…', 'connected');
-        // Anunciar nick para o Mestre
         saveMyNick();
         connSend(conn, { type: 'nick_announce', nick: getMyNick(), role: 'Jogador', peerId: myPeerId() });
     });
@@ -4781,15 +5280,51 @@ function setupClientConnection(conn) {
     conn.on('close', () => {
         connections = [];
         updatePeerBadge();
-        showFeedback('🔴 Conexão com o Mestre perdida.', 'error');
+        showFeedback('🔴 Conexão perdida. Reconectando…', 'error');
+        scheduleClientReconnect(conn.peer);
     });
 
     conn.on('error', err => {
         console.error('[PeerJS Client] conn error', err);
         connections = [];
         updatePeerBadge();
-        showFeedback('❌ Erro na conexão P2P.', 'error');
+        showFeedback('❌ Erro P2P. Reconectando…', 'error');
+        scheduleClientReconnect(conn.peer);
     });
+}
+
+let _reconnectTimer = null;
+function scheduleClientReconnect(hostPeerId) {
+    if (isHost || !hostPeerId) return;
+    if (_reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        showFeedback('❌ Não foi possível reconectar.', 'error');
+        _reconnectAttempts = 0;
+        return;
+    }
+    const delay = Math.min(2000 * Math.pow(1.5, _reconnectAttempts), 30000);
+    _reconnectAttempts++;
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = setTimeout(() => {
+        if (connections.length > 0 && connections[0].open) { _reconnectAttempts = 0; return; }
+        showFeedback(`🔄 Reconectando… (${_reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, 'info');
+        try {
+            const nc = peer.connect(hostPeerId, { reliable: true, serialization: 'json' });
+            const t = setTimeout(() => { if (!nc.open) { nc.close(); scheduleClientReconnect(hostPeerId); } }, 8000);
+            nc.on('open', () => {
+                clearTimeout(t);
+                _reconnectAttempts = 0;
+                connections = [nc];
+                _clientHostPeerId = hostPeerId;
+                updatePeerBadge();
+                showFeedback('🟢 Reconectado! Sincronizando…', 'success');
+                connSend(nc, { type: 'nick_announce', nick: getMyNick(), role: 'Jogador', peerId: myPeerId() });
+                setTimeout(() => connSend(nc, { type: 'request_sync' }), 800);
+            });
+            nc.on('data', raw => handleRemoteMessage(raw, nc));
+            nc.on('close', () => { connections = []; updatePeerBadge(); scheduleClientReconnect(hostPeerId); });
+            nc.on('error', () => { scheduleClientReconnect(hostPeerId); });
+        } catch(e) { scheduleClientReconnect(hostPeerId); }
+    }, delay);
 }
 
 // ============================================================
@@ -4848,6 +5383,9 @@ function _showRetry(role) {
 const PING_INTERVAL   = 5000;  // enviar ping a cada 5s
 const PING_TIMEOUT    = 12000; // remover se não pingar em 12s
 let heartbeatTimer = null;
+let _clientHostPeerId = null;
+let _reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 8;
 
 function startHeartbeat() {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
@@ -4880,6 +5418,20 @@ function startHeartbeat() {
 
 function stopHeartbeat() {
     if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+
+// Periodic silent resync for clients (every 45s) — helps mobile after background sleep
+let _clientSyncTimer = null;
+function startClientSyncTimer() {
+    if (_clientSyncTimer) clearInterval(_clientSyncTimer);
+    _clientSyncTimer = setInterval(() => {
+        if (isHost || myRole === null) return;
+        if (!connections.length || !connections[0].open) return;
+        connSend(connections[0], { type: 'request_sync' });
+    }, 45000);
+}
+function stopClientSyncTimer() {
+    if (_clientSyncTimer) { clearInterval(_clientSyncTimer); _clientSyncTimer = null; }
 }
 
 
@@ -5211,6 +5763,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     $('addManualLightBtn').addEventListener('click', addManualLight);
+
+    $('toggleLightIconsBtn')?.addEventListener('click', () => {
+        lightTokensVisible = !lightTokensVisible;
+        applyLightIconsToggleUI();
+        drawCanvas();
+        broadcast({ type: 'light_icons_visible', visible: lightTokensVisible });
+    });
 
     // ── Boot ──────────────────────────────────────────────────────
     // Sempre inicia na tela principal — carregamento automático desativado.
