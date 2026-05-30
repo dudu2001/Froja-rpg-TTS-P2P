@@ -5190,16 +5190,19 @@ cancelMapSettingsBtn.addEventListener('click', () => mapSettingsModal.classList.
 uploadMapBackgroundBtn.addEventListener('click', () => mapBackgroundInput.click());
 mapBackgroundInput.addEventListener('change', e => {
     if (!e.target.files.length) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
+    const file = e.target.files[0];
+    // Ler como DataURL para exibição local e armazenamento em mapSettings
+    const readerB64 = new FileReader();
+    readerB64.onload = ev => {
         const base64 = ev.target.result;
         mapSettings.backgroundImage = base64;
         mapBackgroundPreview.src = base64;
         mapBackgroundPreviewContainer.classList.remove('hidden');
         loadMapBackground().then(() => drawCanvas());
-        broadcastMapBackgroundChunks(base64);
+        // Transmitir via streaming binário ACK-based (passa o File original)
+        broadcastMapBackgroundChunks(file);
     };
-    reader.readAsDataURL(e.target.files[0]);
+    readerB64.readAsDataURL(file);
     e.target.value = '';
 });
 
@@ -5323,32 +5326,7 @@ let myRole      = null;   // 'host' | 'client' | null (single-player)
 let _suppressBroadcast = false;
 
 // Image chunk reassembly buffer: imageId → { npcId, chunks[], total, received }
-// (mantido para compatibilidade com o formato legado 'image_chunk')
 const imageAssemblyBuffer = {};
-
-/**
- * Aplica a imagem montada (base64 completo) ao NPC/fundo correspondente.
- * Chamada tanto pelo novo fluxo (map_chunk+ack+IndexedDB) quanto pelo legado.
- */
-function _aplicarImagemRecebida(id, npcId, base64) {
-    if (npcId === '__bg__') {
-        mapSettings.backgroundImage = base64;
-        saveStateToStorage();
-        loadMapBackground().then(() => { drawCanvas(); showFeedback('🗺️ Fundo do mapa recebido!', 'success'); });
-    } else if (npcs[npcId]) {
-        npcs[npcId].tokenImageBase64 = base64;
-        saveStateToStorage();
-        tokens.filter(t => t.npcId === npcId).forEach(t => {
-            const img = new Image();
-            img.onload = () => { t.imageObj = img; drawCanvas(); };
-            img.src = base64;
-        });
-        renderNpcList();
-        showFeedback('🖼️ Imagem do token recebida!', 'success');
-    }
-    // Limpar chunks do IndexedDB após montagem bem-sucedida
-    idbClearChunks(id);
-}
 
 // DOM refs for lobby
 const lobbyScreen       = $('lobbyScreen');
@@ -5425,10 +5403,7 @@ function handleRemoteMessage(raw, sourceConn) {
     } catch(e) { console.warn('[P2P] parse error', e); return; }
 
     // Host relays parsed object to all other clients.
-    // Exceção: map_chunk e ack são ponto-a-ponto (controle de fluxo ACK)
-    // e não devem ser retransmitidos para outros jogadores.
-    const _noRelay = msg.type === 'map_chunk' || msg.type === 'ack';
-    if (isHost && sourceConn && !_noRelay) relay(msg, sourceConn);
+    if (isHost && sourceConn) relay(msg, sourceConn);
 
     _suppressBroadcast = true;
     try {
@@ -5655,76 +5630,56 @@ function handleRemoteMessage(raw, sourceConn) {
             }
 
             case 'map_chunk': {
-                // ── RECEPTOR DE CHUNK (Jogador) ──────────────────────────────
-                // 1. Grava o chunk no IndexedDB (sem acumular na RAM)
-                // 2. Responde com ACK para liberar o próximo chunk no remetente
-                // 3. Quando todos os chunks chegarem, monta o arquivo e aplica
-                const { fileId, npcId, index, total, mimeType, data } = msg;
-
-                // Gravar no IndexedDB — quando confirmar no disco, enviar ACK
-                idbSaveChunk(fileId, index, data).then((saved) => {
-                    // ACK leve: informa ao Mestre que gravamos e pode enviar o próximo
-                    if (sourceConn && isHost) {
-                        // Host relaying: já foi relayed acima, não enviar ACK
-                    } else if (!isHost && connections.length > 0 && connections[0].open) {
-                        try { connections[0].send({ type: 'ack', fileId, index }); } catch(e) {}
+                // Fragmento binário do fundo do mapa — gravar no IndexedDB e enviar ACK
+                const { fileId, index, total, mimeType, data } = msg;
+                const chunkId = `${fileId}_${index}`;
+                _dbPut(chunkId, data).then(() => {
+                    // ACK de volta para o Mestre continuar o streaming
+                    if (!isHost && connections.length > 0) {
+                        try { connSend(connections[0], { type: 'map_ack', fileId, index }); } catch(e) {}
                     }
-
-                    // Verificar se foi o último chunk
-                    idbGetAllChunks(fileId).then(allChunks => {
-                        if (allChunks.length < total) return; // ainda faltam chunks
-
-                        // ── Montagem final ──────────────────────────────────
-                        // Reunir ArrayBuffers / strings em ordem e criar Blob
-                        let base64Final = null;
-                        // Detectar se os dados são ArrayBuffer ou string base64
-                        const firstData = allChunks[0]?.data;
-                        if (firstData instanceof ArrayBuffer || ArrayBuffer.isView(firstData)) {
-                            // Dados binários → converter para base64
-                            const totalLen = allChunks.reduce((s, c) => s + (c.data.byteLength || c.data.length || 0), 0);
-                            const combined = new Uint8Array(totalLen);
-                            let offset = 0;
-                            allChunks.forEach(c => {
-                                const view = c.data instanceof ArrayBuffer ? new Uint8Array(c.data) : c.data;
-                                combined.set(view, offset);
-                                offset += view.length;
+                    // Último fragmento: remontar na RAM e renderizar
+                    if (index === total - 1) {
+                        const prefix = `${fileId}_`;
+                        _dbGetAll(prefix).then(records => {
+                            // Ordenar por índice e extrair ArrayBuffers
+                            records.sort((a, b) => {
+                                const ai = parseInt(a.chunkId.slice(prefix.length));
+                                const bi = parseInt(b.chunkId.slice(prefix.length));
+                                return ai - bi;
                             });
-                            // Converter para base64 via Blob + FileReader
-                            const blob = new Blob([combined], { type: mimeType || 'image/png' });
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                base64Final = reader.result;
-                                _aplicarImagemRecebida(fileId, npcId, base64Final);
+                            const blob = new Blob(records.map(r => r.data), { type: mimeType || 'image/png' });
+                            const url  = URL.createObjectURL(blob);
+                            // Converter para base64 para armazenar em mapSettings (compatibilidade com save/load)
+                            const fr = new FileReader();
+                            fr.onload = fev => {
+                                const base64 = fev.target.result;
+                                mapSettings.backgroundImage = base64;
+                                saveStateToStorage();
+                                loadMapBackground().then(() => {
+                                    drawCanvas();
+                                    showFeedback('Fundo do mapa recebido!', 'success');
+                                });
+                                URL.revokeObjectURL(url);
                             };
-                            reader.readAsDataURL(blob);
-                        } else {
-                            // Dados já são strings base64 (formato legado)
-                            const header = `data:${mimeType || 'image/png'};base64,`;
-                            base64Final = header + allChunks.map(c => c.data).join('');
-                            _aplicarImagemRecebida(fileId, npcId, base64Final);
-                        }
-                    });
-                });
+                            fr.readAsDataURL(blob);
+                            // Limpar IndexedDB para não acumular lixo
+                            _dbDeleteAll(prefix);
+                        }).catch(err => console.warn('[MapChunk] Erro ao remontar:', err));
+                    }
+                }).catch(err => console.warn('[MapChunk] Erro ao gravar IndexedDB:', err));
                 break;
             }
 
-            case 'ack': {
-                // ── HOST RECEBEU CONFIRMAÇÃO DO JOGADOR ──────────────────────
-                // Avançar para o próximo chunk desta conexão
-                if (isHost && sourceConn && sourceConn._ackState) {
-                    const s = sourceConn._ackState;
-                    if (msg.fileId === s.fileId && msg.index === s.currentIndex) {
-                        s.currentIndex++;
-                        _enviarProximoPedacoConn(sourceConn);
-                    }
+            case 'map_ack': {
+                // Mestre recebeu confirmação do jogador — enviar próximo fragmento
+                if (isHost && sourceConn) {
+                    _onMapAck(sourceConn.peer, msg.fileId, msg.index);
                 }
                 break;
             }
 
             case 'image_chunk': {
-                // ── FORMATO LEGADO (chunks base64 sem ACK) ───────────────────
-                // Mantido para compatibilidade com versões anteriores do cliente.
-                // Novo fluxo usa 'map_chunk' + 'ack'.
                 const { imageId, npcId, chunkIndex, totalChunks, data } = msg;
                 if (!imageAssemblyBuffer[imageId])
                     imageAssemblyBuffer[imageId] = { npcId, chunks:new Array(totalChunks), total:totalChunks, received:0 };
@@ -5735,7 +5690,20 @@ function handleRemoteMessage(raw, sourceConn) {
                     if (buf.received === buf.total) {
                         const base64 = buf.chunks.join('');
                         delete imageAssemblyBuffer[imageId];
-                        _aplicarImagemRecebida(imageId, npcId, base64);
+                        if (npcId === '__bg__') {
+                            mapSettings.backgroundImage = base64;
+                            saveStateToStorage();
+                            loadMapBackground().then(() => { drawCanvas(); showFeedback('Fundo do mapa recebido!', 'success'); });
+                        } else if (npcs[npcId]) {
+                            npcs[npcId].tokenImageBase64 = base64;
+                            saveStateToStorage();
+                            tokens.filter(t => t.npcId === npcId).forEach(t => {
+                                const img = new Image();
+                                img.onload = () => { t.imageObj = img; drawCanvas(); };
+                                img.src = base64;
+                            });
+                            renderNpcList();
+                        }
                     }
                 }
                 break;
@@ -5801,159 +5769,184 @@ function handleRemoteMessage(raw, sourceConn) {
 }
 
 // ============================================================
-//   INDEXEDDB — Persistência de chunks de imagem em disco
-//   Gravar cada chunk em disco antes de confirmar o recebimento
-//   ao remetente (backpressure natural). Isso evita acúmulo na
-//   RAM e permite retomada após queda de conexão.
+//   INDEXEDDB — Cache temporário de fragmentos binários
 // ============================================================
-const IDB_NAME    = 'ForjaFetchCache';
-const IDB_VERSION = 1;
-let idb = null; // instância do banco (IDBDatabase)
+const DB_NAME    = 'ForjaFetchCache';
+const DB_VERSION = 1;
+let   _forjaDb   = null;
 
-(function initIndexedDB() {
-    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
-    req.onupgradeneeded = (e) => {
-        const _db = e.target.result;
-        // Object store indexado pela chave composta "fileId_index"
-        if (!_db.objectStoreNames.contains('chunks')) {
-            _db.createObjectStore('chunks', { keyPath: 'chunkId' });
+(function initForjaDb() {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('chunks')) {
+            db.createObjectStore('chunks', { keyPath: 'chunkId' });
         }
     };
-    req.onsuccess  = (e) => { idb = e.target.result; };
-    req.onerror    = (e) => { console.warn('[IDB] Falha ao abrir banco:', e.target.error); };
+    req.onsuccess = e => { _forjaDb = e.target.result; };
+    req.onerror   = e => { console.warn('[ForjaDB] Falha ao abrir IndexedDB:', e.target.error); };
 })();
 
-/** Salva um ArrayBuffer/string no IndexedDB. Retorna Promise<boolean>. */
-function idbSaveChunk(fileId, index, data) {
-    return new Promise((resolve) => {
-        if (!idb) { resolve(false); return; }
+function _dbPut(chunkId, data) {
+    return new Promise((resolve, reject) => {
+        if (!_forjaDb) { resolve(); return; }
         try {
-            const tx    = idb.transaction('chunks', 'readwrite');
+            const tx    = _forjaDb.transaction('chunks', 'readwrite');
             const store = tx.objectStore('chunks');
-            store.put({ chunkId: `${fileId}_${index}`, fileId, index, data });
-            tx.oncomplete = () => resolve(true);
-            tx.onerror    = () => resolve(false);
-        } catch(e) { resolve(false); }
+            const req   = store.put({ chunkId, data });
+            req.onsuccess = () => resolve();
+            req.onerror   = e  => reject(e.target.error);
+        } catch(e) { reject(e); }
     });
 }
 
-/** Recupera todos os chunks de um fileId, ordenados pelo índice. Retorna Promise<Array>. */
-function idbGetAllChunks(fileId) {
-    return new Promise((resolve) => {
-        if (!idb) { resolve([]); return; }
+function _dbGetAll(prefix) {
+    return new Promise((resolve, reject) => {
+        if (!_forjaDb) { resolve([]); return; }
         try {
-            const tx    = idb.transaction('chunks', 'readonly');
+            const tx    = _forjaDb.transaction('chunks', 'readonly');
             const store = tx.objectStore('chunks');
             const req   = store.getAll();
-            req.onsuccess = () => {
-                const all = (req.result || [])
-                    .filter(r => r.fileId === fileId)
-                    .sort((a, b) => a.index - b.index);
-                resolve(all);
-            };
-            req.onerror = () => resolve([]);
-        } catch(e) { resolve([]); }
+            req.onsuccess = e => resolve(e.target.result.filter(r => r.chunkId.startsWith(prefix)));
+            req.onerror   = e => reject(e.target.error);
+        } catch(e) { reject(e); }
     });
 }
 
-/** Remove todos os chunks de um fileId do IndexedDB. */
-function idbClearChunks(fileId) {
-    if (!idb) return;
+function _dbDeleteAll(prefix) {
+    if (!_forjaDb) return;
     try {
-        const tx    = idb.transaction('chunks', 'readwrite');
+        const tx    = _forjaDb.transaction('chunks', 'readwrite');
         const store = tx.objectStore('chunks');
-        const req   = store.getAll();
-        req.onsuccess = () => {
-            (req.result || [])
-                .filter(r => r.fileId === fileId)
-                .forEach(r => store.delete(r.chunkId));
+        const req   = store.openCursor();
+        req.onsuccess = e => {
+            const cursor = e.target.result;
+            if (!cursor) return;
+            if (cursor.key.startsWith(prefix)) cursor.delete();
+            cursor.continue();
         };
     } catch(e) {}
 }
 
 // ============================================================
-//   CONTROLE DE FLUXO ACK — Envio cadenciado (Backpressure)
-//   O Mestre fatiará o arquivo em gotas de 32 KB e só enviará
-//   o próximo pedaço quando receber { type: 'ack' } do jogador.
-//   Isso impede a inundação do buffer UDP/TCP do roteador NAT,
-//   permitindo que o STUN funcione sem precisar de TURN.
+//   IMAGE CHUNKING — tokens NPC (base64, legado inalterado)
 // ============================================================
-const ACK_CHUNK_SIZE = 32 * 1024; // 32 KB — tamanho que não estressa o NAT
+const CHUNK_SIZE    = 12000;      // base64 chunks para tokens NPC (legado)
+const MAP_CHUNK_SZ  = 32 * 1024; // 32 KB — chunks binários para fundo de mapa
 
-// Estado de envio ativo (host → um jogador por vez via ACK)
-let envioPendente = {
-    fileId:       null,
-    buffer:       null,   // ArrayBuffer do arquivo
-    total:        0,
-    currentIndex: 0,
-    conn:         null,   // DataConnection alvo
-    mimeType:     '',
-    npcId:        null    // '__bg__' para fundo, ou npcId para token
-};
+function broadcastImageChunks(npcId, base64String) {
+    if (!base64String || myRole === null || connections.length === 0) return;
+    const imageId     = `live_${npcId}_${Date.now()}`;
+    const totalChunks = Math.ceil(base64String.length / CHUNK_SIZE);
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = base64String.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        setTimeout(() => broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk }), i * 10);
+    }
+}
 
-/**
- * Inicia o envio fatiado de um arquivo para uma conexão específica.
- * Lê o arquivo como ArrayBuffer e dispara o envio do 1º chunk.
- */
-function iniciarEnvioArquivo(base64String, npcId, conn) {
-    if (!conn || !conn.open) return;
-    // Converter base64 → ArrayBuffer
-    try {
-        const bin    = atob(base64String.split(',').pop()); // remove "data:...;base64,"
-        const bytes  = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const mimeMatch = base64String.match(/^data:([^;]+);base64,/);
-        const mimeType  = mimeMatch ? mimeMatch[1] : 'image/png';
+// ============================================================
+//   MAP BACKGROUND — Streaming binário ACK-based (backpressure)
+//   Cada jogador tem seu próprio estado de envio independente.
+// ============================================================
 
-        envioPendente = {
-            fileId:       `file_${npcId}_${Date.now()}`,
-            buffer:       bytes.buffer,
-            total:        Math.ceil(bytes.buffer.byteLength / ACK_CHUNK_SIZE),
+// Estado de envio por peerId
+const _mapStreamState = {}; // peerId → { fileId, buffer, total, currentIndex, conn, mimeType }
+
+function _initMapStream(file, conn) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const buffer = e.target.result;
+        const fileId = 'bg_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        _mapStreamState[conn.peer] = {
+            fileId,
+            buffer,
+            total:        Math.ceil(buffer.byteLength / MAP_CHUNK_SZ),
             currentIndex: 0,
             conn,
-            mimeType,
-            npcId
+            mimeType:     file.type || 'image/png'
         };
-        enviarProximoPedaco();
-    } catch(e) {
-        console.warn('[ACK] Erro ao preparar arquivo para envio:', e);
-    }
+        _sendNextMapChunk(conn.peer);
+    };
+    reader.readAsArrayBuffer(file);
 }
 
-/** Envia o próximo chunk do envioPendente e aguarda ACK. */
-function enviarProximoPedaco() {
-    if (!envioPendente.buffer || envioPendente.currentIndex >= envioPendente.total) {
-        console.log('[ACK] ✅ Envio concluído:', envioPendente.fileId);
+function _sendNextMapChunk(peerId) {
+    const s = _mapStreamState[peerId];
+    if (!s) return;
+    if (s.currentIndex >= s.total) {
+        console.log('[MapStream] Transmissão finalizada para', peerId);
+        delete _mapStreamState[peerId];
         return;
     }
-    const { fileId, buffer, total, currentIndex, conn, mimeType, npcId } = envioPendente;
-    if (!conn || !conn.open) return; // conexão perdida durante envio
-
-    const inicio = currentIndex * ACK_CHUNK_SIZE;
-    const fim    = Math.min(inicio + ACK_CHUNK_SIZE, buffer.byteLength);
-    const slice  = buffer.slice(inicio, fim); // ArrayBuffer — sem cópia desnecessária
-
+    const start = s.currentIndex * MAP_CHUNK_SZ;
+    const end   = Math.min(start + MAP_CHUNK_SZ, s.buffer.byteLength);
+    const slice = s.buffer.slice(start, end);
     try {
-        conn.send({
-            type:        'map_chunk',
-            fileId,
-            npcId,
-            index:       currentIndex,
-            total,
-            mimeType,
-            data:        slice        // PeerJS serializa ArrayBuffer automaticamente
+        s.conn.send({
+            type:     'map_chunk',
+            fileId:   s.fileId,
+            index:    s.currentIndex,
+            total:    s.total,
+            mimeType: s.mimeType,
+            data:     slice
         });
     } catch(e) {
-        console.warn('[ACK] Erro ao enviar chunk:', e);
+        console.warn('[MapStream] Erro ao enviar fragmento:', e);
+        delete _mapStreamState[peerId];
     }
 }
 
-// ============================================================
-//   IMAGE CHUNKING — compatibilidade com o sistema de broadcast
-//   Mantém broadcastImageChunks/broadcastMapBackgroundChunks mas
-//   agora usa o fluxo ACK para cada conexão individualmente.
-// ============================================================
-const CHUNK_SIZE = ACK_CHUNK_SIZE; // alias de compatibilidade (12 KB → 32 KB)
+// Chamado quando o Mestre recebe um ACK de volta do jogador
+function _onMapAck(peerId, fileId, index) {
+    const s = _mapStreamState[peerId];
+    if (!s || s.fileId !== fileId || s.currentIndex !== index) return;
+    s.currentIndex++;
+    _sendNextMapChunk(peerId);
+}
+
+// Armazena o arquivo atual para streaming (usado quando novo jogador conecta)
+let _lastMapBgFile = null;
+
+function broadcastMapBackgroundChunks(fileOrBase64) {
+    // fileOrBase64: File object (novo upload) ou string base64 (legado/sync)
+    if (!myRole === null || connections.length === 0) return;
+    const openConns = connections.filter(c => c.open);
+    if (!openConns.length) return;
+
+    if (fileOrBase64 instanceof File) {
+        _lastMapBgFile = fileOrBase64;
+        openConns.forEach(conn => _initMapStream(fileOrBase64, conn));
+    } else if (typeof fileOrBase64 === 'string' && fileOrBase64) {
+        // Caminho legado: base64 string — fragmentar como antes
+        const npcId       = '__bg__';
+        const imageId     = `bg_${Date.now()}`;
+        const totalChunks = Math.ceil(fileOrBase64.length / CHUNK_SIZE);
+        for (let i = 0; i < totalChunks; i++) {
+            const chunk = fileOrBase64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            setTimeout(() => broadcast({ type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks, data:chunk }), i * 10);
+        }
+    }
+}
+
+// Enviar fundo binário para um jogador recém-conectado (se houver arquivo disponível)
+function sendMapBgToNewConn(conn) {
+    if (_lastMapBgFile) {
+        _initMapStream(_lastMapBgFile, conn);
+    } else if (mapSettings.backgroundImage) {
+        // Fallback legado: já temos apenas a base64 em memória
+        const base64      = mapSettings.backgroundImage;
+        const npcId       = '__bg__';
+        const sessionId   = Date.now();
+        const imageId     = `sync_${sessionId}___bg__`;
+        const total       = Math.ceil(base64.length / CHUNK_SIZE);
+        let   delay       = 0;
+        for (let i = 0; i < total; i++) {
+            const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            setTimeout(() => connSend(conn, { type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            delay += 12;
+        }
+    }
+}
 
 // ============================================================
 //   FULL STATE SYNC (host → new client on connection open)
@@ -5985,123 +5978,50 @@ function sendFullStateSync(conn) {
         lightTokensVisible
     });
 
-    // ── Envio de imagens via fluxo ACK (uma por vez, por conexão) ──
-    // A função sendImagesToConn enfileira cada NPC com imagem e inicia o
-    // envio cadenciado após o estado principal ter chegado ao jogador.
-    setTimeout(() => sendImagesToConn(conn), 600);
-}
+    const sessionId = Date.now();
+    let delay = 500;
 
-/**
- * Envia todas as imagens de tokens (e o fundo) para uma conexão específica,
- * usando o fluxo ACK para não inundar o roteador.
- * As imagens são enviadas uma por vez, esperando o ACK de cada chunk.
- */
-function sendImagesToConn(conn) {
-    if (!conn || !conn.open) return;
-
-    // Montar fila: [{ npcId, base64 }, ...]
-    const queue = [];
     Object.keys(npcs).forEach(npcId => {
         const base64 = npcs[npcId].tokenImageBase64;
-        if (base64) queue.push({ npcId, base64 });
+        if (!base64) return;
+        const total   = Math.ceil(base64.length / CHUNK_SIZE);
+        const imageId = `sync_${sessionId}_${npcId}`;
+        for (let i = 0; i < total; i++) {
+            const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            setTimeout(() => connSend(conn, { type:'image_chunk', imageId, npcId, chunkIndex:i, totalChunks:total, data:chunk }), delay);
+            delay += 12;
+        }
+        delay += 100;
     });
+
     if (mapSettings.backgroundImage) {
-        queue.push({ npcId: '__bg__', base64: mapSettings.backgroundImage });
+        // Usar streaming binário ACK-based se o arquivo estiver disponível,
+        // caso contrário cair no legado base64 via sendMapBgToNewConn
+        setTimeout(() => sendMapBgToNewConn(conn), delay + 200);
     }
-
-    if (!queue.length) return;
-
-    // O host usa uma fila sequencial: só começa o próximo após terminar o atual.
-    // O fluxo ACK controla cada transferência internamente.
-    let queueIndex = 0;
-
-    function sendNext() {
-        if (queueIndex >= queue.length || !conn.open) return;
-        const { npcId, base64 } = queue[queueIndex++];
-        // Iniciar envio com controle de fluxo ACK para esta conexão
-        iniciarEnvioArquivoParaConn(base64, npcId, conn, sendNext);
-    }
-
-    sendNext();
-}
-
-/**
- * Variante de iniciarEnvioArquivo que notifica um callback quando o envio
- * completo terminar — permite encadear múltiplos arquivos na fila.
- */
-function iniciarEnvioArquivoParaConn(base64String, npcId, conn, onComplete) {
-    if (!conn || !conn.open) { onComplete && onComplete(); return; }
-    try {
-        const bin    = atob(base64String.split(',').pop());
-        const bytes  = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const mimeMatch = base64String.match(/^data:([^;]+);base64,/);
-        const mimeType  = mimeMatch ? mimeMatch[1] : 'image/png';
-        const fileId    = `file_${npcId}_${Date.now()}`;
-        const total     = Math.ceil(bytes.buffer.byteLength / ACK_CHUNK_SIZE);
-
-        // Guardar estado no objeto conn para suportar múltiplas conexões simultâneas
-        conn._ackState = { fileId, buffer: bytes.buffer, total, currentIndex: 0, mimeType, npcId, onComplete };
-        _enviarProximoPedacoConn(conn);
-    } catch(e) {
-        console.warn('[ACK] Erro ao preparar arquivo:', e);
-        onComplete && onComplete();
-    }
-}
-
-function _enviarProximoPedacoConn(conn) {
-    if (!conn || !conn.open || !conn._ackState) return;
-    const s = conn._ackState;
-    if (s.currentIndex >= s.total) {
-        console.log('[ACK] ✅ Arquivo enviado:', s.fileId);
-        conn._ackState = null;
-        s.onComplete && s.onComplete();
-        return;
-    }
-    const inicio = s.currentIndex * ACK_CHUNK_SIZE;
-    const fim    = Math.min(inicio + ACK_CHUNK_SIZE, s.buffer.byteLength);
-    const slice  = s.buffer.slice(inicio, fim);
-    try {
-        conn.send({ type:'map_chunk', fileId:s.fileId, npcId:s.npcId, index:s.currentIndex, total:s.total, mimeType:s.mimeType, data:slice });
-    } catch(e) { console.warn('[ACK] Erro ao enviar chunk:', e); }
 }
 
 // ============================================================
-//   BROADCAST DE IMAGENS — usa fluxo ACK para cada conexão
-//   Cada jogador recebe chunks individualmente com confirmação,
-//   evitando a inundação de rede que causava o problema original.
+//   PEERJS CONFIG
 // ============================================================
-function broadcastImageChunks(npcId, base64String) {
-    if (!base64String || myRole === null || connections.length === 0) return;
-    // Enviar para cada conexão com fluxo ACK independente
-    connections.forEach(conn => {
-        if (conn && conn.open) {
-            iniciarEnvioArquivoParaConn(base64String, npcId, conn, null);
-        }
-    });
+async function getTurnCredentials() {
+  const res = await fetch('https://turn-creds.eduardogamer2720.workers.dev/turn-credentials');
+  if (!res.ok) throw new Error('Falha ao obter credenciais TURN');
+  return res.json();
 }
 
-function broadcastMapBackgroundChunks(base64String) {
-    if (!base64String || myRole === null || connections.length === 0) return;
-    connections.forEach(conn => {
-        if (conn && conn.open) {
-            iniciarEnvioArquivoParaConn(base64String, '__bg__', conn, null);
-        }
-    });
-}
-//   O Controle de Fluxo ACK + IndexedDB elimina a necessidade
-//   de TURN ao evitar inundação de pacotes UDP no roteador.
-// ============================================================
-function makePeerConfig() {
-  // Usa exclusivamente o servidor STUN gratuito do Google.
-  // O fatiamento em chunks de 32 KB com confirmação ACK garante
-  // que o tráfego seja tratado como mensagens leves pelo NAT,
-  // tornando o STUN suficiente em quase 100% dos casos.
-  return Promise.resolve({
+async function makePeerConfig() {
+  const turnData = await getTurnCredentials();
+  return {
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
+    debug: 1,
     config: {
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      iceServers: turnData.iceServers
     }
-  });
+  };
 }
 
 // ============================================================
@@ -6119,8 +6039,8 @@ async function initAsHost() {
     try {
         cfg = await makePeerConfig();
     } catch (e) {
-        console.error('[P2P] Erro ao configurar PeerJS (host):', e);
-        setLobbyStatus('❌ Erro ao inicializar P2P. Tente recarregar a página.', 'error');
+        console.error('[TURN] Erro ao obter credenciais (host):', e);
+        setLobbyStatus('❌ Erro ao conectar ao servidor TURN. Tente recarregar a página.', 'error');
         lobbyHostBtn.disabled = false;
         myRole = null;
         isHost = false;
@@ -6191,7 +6111,7 @@ function setupHostConnection(conn) {
         connSend(conn, { type: 'nick_list', players: currentList });
     });
     conn.on('data',  raw => handleRemoteMessage(raw, conn));
-    conn.on('close', () => {
+    conn.on('close', ()  => {
         const nick = conn._nickInfo?.nick || 'Jogador';
         onlinePlayers.delete(conn.peer);
         connections = connections.filter(c => c !== conn);
@@ -6223,8 +6143,8 @@ async function initAsClient(hostId) {
     try {
         cfg = await makePeerConfig();
     } catch (e) {
-        console.error('[P2P] Erro ao configurar PeerJS (client):', e);
-        setLobbyStatus('❌ Erro ao inicializar P2P. Tente recarregar a página.', 'error');
+        console.error('[TURN] Erro ao obter credenciais (client):', e);
+        setLobbyStatus('❌ Erro ao conectar ao servidor TURN. Tente recarregar a página.', 'error');
         lobbyJoinBtn.disabled = false;
         myRole = null;
         isHost = false;
